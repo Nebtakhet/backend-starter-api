@@ -1,6 +1,23 @@
 # Backend Starter API
 
-FastAPI starter project with a clean, modular structure, SQLAlchemy models, Alembic migrations, and basic auth endpoints.
+<p align="center">
+	<strong>FastAPI starter project with a clean, modular structure, SQLAlchemy models, Alembic migrations, and basic auth endpoints.</strong>
+</p>
+
+<p align="center">
+	<a href="https://www.python.org/">
+		<img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue">
+	</a>
+	<a href="https://fastapi.tiangolo.com/">
+		<img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-0.100%2B-009688">
+	</a>
+	<a href="https://github.com/psf/black">
+		<img alt="Black" src="https://img.shields.io/badge/code%20style-black-000000">
+	</a>
+	<a href="https://github.com/pre-commit/pre-commit">
+		<img alt="pre-commit" src="https://img.shields.io/badge/pre--commit-enabled-brightgreen">
+	</a>
+</p>
 
 ## Features
 
@@ -12,6 +29,7 @@ FastAPI starter project with a clean, modular structure, SQLAlchemy models, Alem
 
 ## Project structure
 
+```text
 backend-starter-api/
 ├── app/
 │   ├── __init__.py
@@ -31,6 +49,7 @@ backend-starter-api/
 ├── pyproject.toml
 ├── README.md
 └── LICENSE
+```
 
 ## Quick start (local)
 
