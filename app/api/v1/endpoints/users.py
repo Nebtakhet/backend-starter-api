@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_current_user, get_db
 from app.schemas.user import UserCreate, UserOut
 from app.services.user_service import create_user, get_user_by_email, list_users
 
@@ -21,3 +21,8 @@ def register_user(data: UserCreate, db: Session = Depends(get_db)) -> UserOut:
 @router.get("/", response_model=list[UserOut])
 def read_users(db: Session = Depends(get_db)) -> list[UserOut]:
     return list_users(db)
+
+
+@router.get("/me", response_model=UserOut)
+def read_me(current_user=Depends(get_current_user)) -> UserOut:
+    return current_user
