@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = Field("change-me", min_length=8)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     SQLALCHEMY_DATABASE_URI: str = "sqlite:///./app.db"
 
 

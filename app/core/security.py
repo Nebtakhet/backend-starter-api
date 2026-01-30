@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
+import secrets
 
 from jose import jwt
 from passlib.context import CryptContext
@@ -24,3 +26,11 @@ def create_access_token(subject: str, expires_delta_minutes: int | None = None) 
     )
     to_encode = {"sub": subject, "exp": expire}
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_refresh_token() -> str:
+    return secrets.token_urlsafe(48)
+
+
+def hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
