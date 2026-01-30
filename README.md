@@ -81,4 +81,4 @@ All routes are mounted under /api/v1 by default.
 
 ## License
 
-See LICENSE.
+See LICENSE
