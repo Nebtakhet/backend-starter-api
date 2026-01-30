@@ -7,7 +7,12 @@ class ItemBase(BaseModel):
 
 
 class ItemCreate(ItemBase):
-    owner_id: int
+    pass
+
+
+class ItemUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
 
 
 class ItemOut(ItemBase):
