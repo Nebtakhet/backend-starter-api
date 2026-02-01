@@ -6,7 +6,7 @@
 
 <p align="center">
 	<a href="https://www.python.org/">
-		<img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue">
+		<img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-blue">
 	</a>
 	<a href="https://fastapi.tiangolo.com/">
 		<img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-0.100%2B-009688">
@@ -23,8 +23,10 @@
 
 - FastAPI app scaffolded for growth
 - SQLAlchemy models + Alembic migrations
-- JWT-based auth flow (signup/login)
+- JWT auth with refresh tokens (hashed in DB)
 - Modular services, schemas, and API routers
+- Items CRUD with ownership enforcement
+- Health endpoint
 - Test suite with pytest
 
 ## Project structure
@@ -74,6 +76,28 @@ docker compose up --build
 ## Tests
 
 pytest
+
+## API endpoints (summary)
+
+Auth:
+- POST /api/v1/auth/login
+- POST /api/v1/auth/refresh
+- POST /api/v1/auth/logout
+
+Users:
+- POST /api/v1/users
+- GET /api/v1/users
+- GET /api/v1/users/me
+
+Items (auth required):
+- POST /api/v1/items
+- GET /api/v1/items
+- GET /api/v1/items/{item_id}
+- PUT /api/v1/items/{item_id}
+- DELETE /api/v1/items/{item_id}
+
+Health:
+- GET /health
 
 ## API versioning
 
