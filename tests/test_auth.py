@@ -32,6 +32,21 @@ def test_login_invalid_credentials():
     assert response.status_code == 401
 
 
+def test_register_duplicate_email_fails():
+    email = f"user-{uuid.uuid4().hex}@example.com"
+    register_user(email)
+    response = client.post(
+        "/api/v1/users/",
+        json={"email": email, "password": "password123"},
+    )
+    assert response.status_code == 400
+
+
+def test_me_requires_auth():
+    response = client.get("/api/v1/users/me")
+    assert response.status_code == 401
+
+
 def test_register_login_and_access_me():
     email = f"user-{uuid.uuid4().hex}@example.com"
     register_user(email)
@@ -70,3 +85,19 @@ def test_refresh_flow_and_logout_revokes():
         json={"refresh_token": new_refresh},
     )
     assert refresh_after_logout.status_code == 401
+
+
+def test_refresh_with_invalid_token():
+    response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": "invalid-token"},
+    )
+    assert response.status_code == 401
+
+
+def test_logout_with_invalid_token_is_idempotent():
+    response = client.post(
+        "/api/v1/auth/logout",
+        json={"refresh_token": "invalid-token"},
+    )
+    assert response.status_code == 204

@@ -81,3 +81,24 @@ def test_item_crud_and_ownership():
 
     delete_own = client.delete(f"/api/v1/items/{item_id}", headers=headers_one)
     assert delete_own.status_code == 204
+
+
+def test_items_require_auth():
+    list_response = client.get("/api/v1/items/")
+    assert list_response.status_code == 401
+
+    create_response = client.post(
+        "/api/v1/items/",
+        json={"title": "No auth", "description": "Denied"},
+    )
+    assert create_response.status_code == 401
+
+
+def test_item_not_found_for_owner():
+    email = f"user-{uuid.uuid4().hex}@example.com"
+    register_user(email)
+    tokens = login_user(email)
+    headers = {"Authorization": f"Bearer {tokens['access_token']}"}
+
+    response = client.get("/api/v1/items/999999", headers=headers)
+    assert response.status_code == 404
