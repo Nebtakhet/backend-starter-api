@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -47,7 +47,12 @@ def rotate_refresh_token(db: Session, raw_token: str) -> Token | None:
         .filter(RefreshToken.token_hash == token_hash)
         .first()
     )
-    if not record or record.revoked or record.expires_at <= utcnow():
+    if not record:
+        return None
+    expires_at = record.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if record.revoked or expires_at <= utcnow():
         return None
     record.revoked = True
     access_token = create_access_token(subject=str(record.user_id))
