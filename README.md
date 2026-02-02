@@ -1,7 +1,7 @@
 # Backend Starter API
 
 <p align="center">
-	<strong>FastAPI starter project with a clean, modular structure, SQLAlchemy models, Alembic migrations, and basic auth endpoints.</strong>
+	<strong>FastAPI starter project with a clean, modular structure, SQLAlchemy models, Alembic migrations, and JWT auth.</strong>
 </p>
 
 <p align="center">
@@ -11,12 +11,25 @@
 	<a href="https://fastapi.tiangolo.com/">
 		<img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-0.100%2B-009688">
 	</a>
+	<a href="https://www.sqlalchemy.org/">
+		<img alt="SQLAlchemy" src="https://img.shields.io/badge/SQLAlchemy-2.0%2B-d71f00">
+	</a>
 	<a href="https://github.com/psf/black">
 		<img alt="Black" src="https://img.shields.io/badge/code%20style-black-000000">
 	</a>
 	<a href="https://github.com/pre-commit/pre-commit">
 		<img alt="pre-commit" src="https://img.shields.io/badge/pre--commit-enabled-brightgreen">
 	</a>
+</p>
+
+<p align="center">
+	<a href="#quick-start-local">Quick start</a>
+	·
+	<a href="#api-endpoints-summary">Endpoints</a>
+	·
+	<a href="#tests">Tests</a>
+	·
+	<a href="#docker">Docker</a>
 </p>
 
 ## Features
@@ -26,8 +39,18 @@
 - JWT auth with refresh tokens (hashed in DB)
 - Modular services, schemas, and API routers
 - Items CRUD with ownership enforcement
+- /users/me endpoint
 - Health endpoint
 - Test suite with pytest
+
+## At a glance
+
+| Layer | What’s included |
+| --- | --- |
+| Auth | Login, refresh, logout, hashed refresh tokens |
+| Users | Register, list, me |
+| Items | Full CRUD + ownership checks |
+| Ops | Health, Docker Compose, test coverage |
 
 ## Project structure
 
@@ -64,6 +87,15 @@ backend-starter-api/
 
 Set the environment variables in your .env file. Use .env.example as the template.
 
+Required:
+- PROJECT_NAME
+- SECRET_KEY
+- ACCESS_TOKEN_EXPIRE_MINUTES
+- SQLALCHEMY_DATABASE_URI
+
+Optional:
+- REFRESH_TOKEN_EXPIRE_DAYS
+
 ## Migrations
 
 - Create a migration: alembic revision --autogenerate -m "init"
@@ -76,6 +108,10 @@ docker compose up --build
 ## Tests
 
 pytest
+
+Docker:
+
+docker compose run --rm -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db api sh -c "pip install -e .[dev] && pytest"
 
 ## API endpoints (summary)
 
