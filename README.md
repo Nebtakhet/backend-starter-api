@@ -23,27 +23,34 @@
 </p>
 
 <p align="center">
-	<a href="#quick-start-local">Quick start</a>
+	<a href="#-quick-start">Quick start</a>
 	·
-	<a href="#api-endpoints-summary">Endpoints</a>
+	<a href="#-installation">Installation</a>
 	·
-	<a href="#tests">Tests</a>
+	<a href="#-configuration">Configuration</a>
 	·
-	<a href="#docker">Docker</a>
+	<a href="#-api-endpoints-summary">Endpoints</a>
+	·
+	<a href="#-tests">Tests</a>
+	·
+	<a href="#-docker">Docker</a>
 </p>
 
-## Features
+## ✨ Features
 
 - FastAPI app scaffolded for growth
 - SQLAlchemy models + Alembic migrations
 - JWT auth with refresh tokens (hashed in DB)
+- Refresh token rotation + reuse detection (revokes all tokens)
+- Access token validation with iss/aud/iat + clock skew
+- Rate limiting on auth endpoints
 - Modular services, schemas, and API routers
 - Items CRUD with ownership enforcement
 - /users/me endpoint
 - Health endpoint
 - Test suite with pytest
 
-## At a glance
+## ⚡ At a glance
 
 | Layer | What’s included |
 | --- | --- |
@@ -52,7 +59,7 @@
 | Items | Full CRUD + ownership checks |
 | Ops | Health, Docker Compose, test coverage |
 
-## Project structure
+## 🧭 Project structure
 
 ```text
 backend-starter-api/
@@ -76,14 +83,31 @@ backend-starter-api/
 └── LICENSE
 ```
 
-## Quick start (local)
+## 🚀 Quick start
 
 1) Create a .env file based on .env.example.
 2) Install dependencies: pip install -e .[dev]
 3) Run the API: uvicorn app.main:app --reload
 4) Open docs: http://localhost:8000/docs
 
-## Configuration
+## 📦 Installation
+
+Requirements:
+- Python 3.11+
+- (Optional) PostgreSQL
+- (Optional) Docker + Docker Compose
+
+Create a virtual environment and install dependencies:
+
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+
+Start the API locally:
+
+uvicorn app.main:app --reload
+
+## ⚙️ Configuration
 
 Set the environment variables in your .env file. Use .env.example as the template.
 
@@ -95,21 +119,27 @@ Required:
 - JWT_AUDIENCE
 - CLOCK_SKEW_SECONDS
 - ACCESS_TOKEN_EXPIRE_MINUTES
+- AUTH_LOGIN_RATE_LIMIT
+- AUTH_REFRESH_RATE_LIMIT
 - SQLALCHEMY_DATABASE_URI
 
 Optional:
 - REFRESH_TOKEN_EXPIRE_DAYS
 
-## Migrations
+Notes:
+- Default DB is SQLite unless SQLALCHEMY_DATABASE_URI is set.
+- Docker Compose uses Postgres and expects SQLALCHEMY_DATABASE_URI in .env.
+
+## 🧱 Migrations
 
 - Create a migration: alembic revision --autogenerate -m "init"
 - Apply migrations: alembic upgrade head
 
-## Docker
+## 🐳 Docker
 
 docker compose up --build
 
-## Tests
+## ✅ Tests
 
 pytest
 
@@ -117,7 +147,15 @@ Docker:
 
 docker compose run --rm -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db api sh -c "pip install -e .[dev] && pytest"
 
-## API endpoints (summary)
+## 🔐 Auth flow (summary)
+
+1) Register a user
+2) Login to receive access + refresh tokens
+3) Use access token for protected endpoints
+4) Refresh to rotate refresh token
+5) Logout to revoke refresh token
+
+## 📚 API endpoints (summary)
 
 Auth:
 - POST /api/v1/auth/login
@@ -139,10 +177,10 @@ Items (auth required):
 Health:
 - GET /health
 
-## API versioning
+## 🧩 API versioning
 
 All routes are mounted under /api/v1 by default.
 
-## License
+## 📄 License
 
 See LICENSE
