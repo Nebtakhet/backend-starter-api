@@ -17,6 +17,7 @@ dependencies = [
     "bcrypt<4.0",
     "python-multipart>=0.0.9",
     "psycopg2-binary>=2.9.9",
+    "slowapi>=0.1.9",
 ]
 
 [project.optional-dependencies]

@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     CLOCK_SKEW_SECONDS: int = 30
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    AUTH_LOGIN_RATE_LIMIT: str = "5/minute"
+    AUTH_REFRESH_RATE_LIMIT: str = "10/minute"
     SQLALCHEMY_DATABASE_URI: str = "sqlite:///./app.db"
 
 
