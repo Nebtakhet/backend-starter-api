@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import hmac
 import hashlib
 import secrets
 
@@ -24,7 +25,14 @@ def create_access_token(subject: str, expires_delta_minutes: int | None = None) 
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=expires_delta_minutes or settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    to_encode = {"sub": subject, "exp": expire}
+    now = datetime.now(timezone.utc)
+    to_encode = {
+        "sub": subject,
+        "exp": expire,
+        "iat": now,
+        "iss": settings.JWT_ISSUER,
+        "aud": settings.JWT_AUDIENCE,
+    }
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -33,4 +41,8 @@ def create_refresh_token() -> str:
 
 
 def hash_refresh_token(token: str) -> str:
-    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+    return hmac.new(
+        settings.REFRESH_TOKEN_SECRET.encode("utf-8"),
+        token.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()

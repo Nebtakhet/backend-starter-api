@@ -32,7 +32,19 @@ def get_current_user(
         detail="Could not validate credentials",
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[ALGORITHM],
+            audience=settings.JWT_AUDIENCE,
+            issuer=settings.JWT_ISSUER,
+            options={
+                "require_exp": True,
+                "require_iat": True,
+                "require_sub": True,
+            },
+            leeway=settings.CLOCK_SKEW_SECONDS,
+        )
         subject = payload.get("sub")
         if subject is None:
             raise credentials_exception

@@ -52,7 +52,10 @@ def rotate_refresh_token(db: Session, raw_token: str) -> Token | None:
     expires_at = record.expires_at
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
-    if record.revoked or expires_at <= utcnow():
+    if record.revoked:
+        revoke_all_refresh_tokens(db, record.user_id)
+        return None
+    if expires_at <= utcnow():
         return None
     record.revoked = True
     access_token = create_access_token(subject=str(record.user_id))
@@ -74,3 +77,10 @@ def revoke_refresh_token(db: Session, raw_token: str) -> bool:
     record.revoked = True
     db.commit()
     return True
+
+
+def revoke_all_refresh_tokens(db: Session, user_id: int) -> None:
+    db.query(RefreshToken).filter(RefreshToken.user_id == user_id).update(
+        {RefreshToken.revoked: True}
+    )
+    db.commit()

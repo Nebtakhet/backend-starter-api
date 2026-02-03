@@ -90,6 +90,10 @@ Set the environment variables in your .env file. Use .env.example as the templat
 Required:
 - PROJECT_NAME
 - SECRET_KEY
+- REFRESH_TOKEN_SECRET
+- JWT_ISSUER
+- JWT_AUDIENCE
+- CLOCK_SKEW_SECONDS
 - ACCESS_TOKEN_EXPIRE_MINUTES
 - SQLALCHEMY_DATABASE_URI
 
