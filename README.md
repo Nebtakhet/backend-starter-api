@@ -177,6 +177,17 @@ Items (auth required):
 Health:
 - GET /health
 
+## 🧪 Error format
+
+All errors follow a consistent shape:
+
+{ "detail": "...", "code": "...", "errors": [...] }
+
+Notes:
+- Validation errors use code validation_error and include errors.
+- Auth/authorization errors use code auth_error.
+- DB integrity errors use code db_integrity_error.
+
 ## 🧩 API versioning
 
 All routes are mounted under /api/v1 by default.
