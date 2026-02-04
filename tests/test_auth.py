@@ -1,8 +1,13 @@
 import uuid
 
 from fastapi.testclient import TestClient
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.main import app
+from app.api.deps import get_db
+from app.core.security import get_password_hash
+from app.db.models import User
+from app.db.session import SessionLocal
 
 client = TestClient(app)
 
@@ -87,6 +92,32 @@ def test_refresh_flow_and_logout_revokes():
     assert refresh_after_logout.status_code == 401
 
 
+def test_refresh_token_reuse_revokes_all():
+    email = f"user-{uuid.uuid4().hex}@example.com"
+    register_user(email)
+    tokens = login_user(email)
+    original_refresh = tokens["refresh_token"]
+
+    rotate_response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": original_refresh},
+    )
+    assert rotate_response.status_code == 200
+    new_refresh = rotate_response.json()["refresh_token"]
+
+    reuse_response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": original_refresh},
+    )
+    assert reuse_response.status_code == 401
+
+    refresh_after_reuse = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": new_refresh},
+    )
+    assert refresh_after_reuse.status_code == 401
+
+
 def test_refresh_with_invalid_token():
     response = client.post(
         "/api/v1/auth/refresh",
@@ -101,3 +132,42 @@ def test_logout_with_invalid_token_is_idempotent():
         json={"refresh_token": "invalid-token"},
     )
     assert response.status_code == 204
+
+
+def test_me_rejects_invalid_token():
+    response = client.get(
+        "/api/v1/users/me",
+        headers={"Authorization": "Bearer invalid"},
+    )
+    assert response.status_code == 401
+
+
+def test_db_rollback_on_exception():
+    route_path = "/_test/rollback"
+    if not any(route.path == route_path for route in app.router.routes):
+        router = APIRouter()
+
+        @router.post(route_path)
+        def force_rollback(payload: dict, db=Depends(get_db)):
+            user = User(
+                email=payload["email"],
+                hashed_password=get_password_hash("password123"),
+            )
+            db.add(user)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="force rollback",
+            )
+
+        app.include_router(router)
+
+    email = f"rollback-{uuid.uuid4().hex}@example.com"
+    response = client.post(route_path, json={"email": email})
+    assert response.status_code == 400
+
+    db = SessionLocal()
+    try:
+        found = db.query(User).filter(User.email == email).first()
+        assert found is None
+    finally:
+        db.close()
