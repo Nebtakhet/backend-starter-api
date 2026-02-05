@@ -11,7 +11,7 @@ from app.services.auth_service import (
     rotate_refresh_token,
 )
 
-from app.main import limiter
+from app.core.rate_limit import limiter
 
 router = APIRouter()
 
