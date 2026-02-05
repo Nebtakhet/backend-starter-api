@@ -46,8 +46,8 @@ def get_current_user(
                 "require_exp": True,
                 "require_iat": True,
                 "require_sub": True,
+                "leeway": settings.CLOCK_SKEW_SECONDS,
             },
-            leeway=settings.CLOCK_SKEW_SECONDS,
         )
         subject = payload.get("sub")
         if subject is None:
