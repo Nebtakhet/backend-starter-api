@@ -145,7 +145,7 @@ pytest
 
 Docker:
 
-docker compose run --rm -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db api sh -c "pip install -e .[dev] && pytest"
+docker compose run --rm --no-deps -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db api sh -c "pip install -e .[dev] && pytest"
 
 ## 🔐 Auth flow (summary)
 
