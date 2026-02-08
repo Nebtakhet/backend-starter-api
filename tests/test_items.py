@@ -7,6 +7,7 @@ from app.main import app
 client = TestClient(app)
 
 
+# Helpers for common auth flows.
 def register_user(email: str, password: str = "password123") -> None:
     response = client.post(
         "/api/v1/users/",
@@ -31,6 +32,7 @@ def test_health_check():
 
 
 def test_item_crud_and_ownership():
+    # Verify ownership checks for CRUD operations.
     email_one = f"user-{uuid.uuid4().hex}@example.com"
     email_two = f"user-{uuid.uuid4().hex}@example.com"
     register_user(email_one)
@@ -84,6 +86,7 @@ def test_item_crud_and_ownership():
 
 
 def test_items_require_auth():
+    # Ensure item routes reject unauthenticated access.
     list_response = client.get("/api/v1/items/")
     assert list_response.status_code == 401
 
