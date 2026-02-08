@@ -145,7 +145,10 @@ pytest
 
 Docker:
 
-docker compose run --rm --no-deps -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db api sh -c "pip install -e .[dev] && pytest"
+docker compose run --rm --no-deps -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db api sh -c "pip install -e .[dev] && python -m pytest"
+
+Note: `python -m pytest` avoids PATH issues when dev tools are installed to the user site inside the container.
+Note: Tests default to SQLite via environment overrides in [tests/conftest.py](tests/conftest.py).
 
 ## 🔐 Auth flow (summary)
 
