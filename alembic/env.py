@@ -1,3 +1,5 @@
+"""Alembic environment configuration for migrations."""
+
 from __future__ import with_statement
 
 import os
