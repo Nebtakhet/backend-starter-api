@@ -1,3 +1,5 @@
+"""Pydantic schemas for item data exchange."""
+
 from pydantic import BaseModel, ConfigDict
 
 
