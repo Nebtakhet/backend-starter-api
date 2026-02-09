@@ -1,3 +1,5 @@
+"""Authentication endpoints (login, refresh, logout)."""
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
