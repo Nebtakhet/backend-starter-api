@@ -1,3 +1,5 @@
+"""Security helpers for passwords and JWT/refresh tokens."""
+
 from datetime import datetime, timedelta, timezone
 import hmac
 import hashlib
@@ -41,6 +43,7 @@ def create_refresh_token() -> str:
 
 
 def hash_refresh_token(token: str) -> str:
+    # Store only a deterministic hash of refresh tokens in the database.
     return hmac.new(
         settings.REFRESH_TOKEN_SECRET.encode("utf-8"),
         token.encode("utf-8"),
