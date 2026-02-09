@@ -1,3 +1,5 @@
+"""Tests for item endpoints and access control."""
+
 import uuid
 
 from fastapi.testclient import TestClient
