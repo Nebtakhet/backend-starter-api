@@ -1,3 +1,5 @@
+"""Pytest fixtures and test configuration."""
+
 import os
 
 import pytest
