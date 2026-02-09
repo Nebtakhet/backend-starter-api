@@ -1,3 +1,5 @@
+"""Authentication service functions for login and token lifecycle."""
+
 from datetime import timedelta, timezone
 
 from sqlalchemy.orm import Session
@@ -53,6 +55,7 @@ def rotate_refresh_token(db: Session, raw_token: str) -> Token | None:
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     if record.revoked:
+        # Defensive: a reused refresh token invalidates all sessions for the user.
         revoke_all_refresh_tokens(db, record.user_id)
         return None
     if expires_at <= utcnow():
