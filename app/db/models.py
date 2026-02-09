@@ -1,3 +1,5 @@
+"""SQLAlchemy ORM models for the application domain."""
+
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String
