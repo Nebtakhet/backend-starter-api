@@ -1,3 +1,5 @@
+"""Time-related helpers for UTC timestamps."""
+
 from datetime import datetime, timezone
 
 
