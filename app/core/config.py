@@ -1,3 +1,5 @@
+"""Application configuration loaded from environment variables."""
+
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,6 +23,7 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _validate_security(self):
+        # Fail fast on insecure or invalid production settings.
         if self.SECRET_KEY.lower() == "change-me":
             raise ValueError("SECRET_KEY must be set to a strong value")
         if self.REFRESH_TOKEN_SECRET.lower() == "change-me":
