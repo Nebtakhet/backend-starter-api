@@ -1,3 +1,5 @@
+"""Pydantic schemas for user data exchange."""
+
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 
