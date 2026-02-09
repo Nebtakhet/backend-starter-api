@@ -1,3 +1,5 @@
+"""Shared FastAPI dependencies for database sessions and auth."""
+
 from collections.abc import Generator
 
 from fastapi import Depends, HTTPException, status
@@ -13,6 +15,7 @@ from app.services.user_service import get_user_by_id
 
 
 def get_db() -> Generator[Session, None, None]:
+    # Provide a session per request and handle commit/rollback consistently.
     db = SessionLocal()
     try:
         yield db
@@ -31,6 +34,7 @@ def get_current_user(
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme),
 ):
+    # Decode the JWT and load the current user or fail with 401.
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
