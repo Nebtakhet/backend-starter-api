@@ -1,3 +1,5 @@
+"""Tests for authentication flows and error handling."""
+
 import uuid
 
 from fastapi.testclient import TestClient
