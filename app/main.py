@@ -1,3 +1,5 @@
+"""FastAPI application setup, middleware, and global error handling."""
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
@@ -20,6 +22,7 @@ from app.core.rate_limit import limiter
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Ensure tables exist on startup for local/dev usage.
     Base.metadata.create_all(bind=engine)
     yield
 
