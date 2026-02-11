@@ -1,5 +1,6 @@
 """FastAPI application setup, middleware, and global error handling."""
 
+from collections.abc import Sequence
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
@@ -12,12 +13,11 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.api.v1.api import api_router
 from app.core.logging import configure_logging
+from app.core.rate_limit import limiter
 from app.db.base import Base
 from app.db.session import engine
 
 configure_logging()
-
-from app.core.rate_limit import limiter
 
 
 @asynccontextmanager
@@ -29,12 +29,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Backend Starter API", lifespan=lifespan)
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
 
 
-def error_payload(detail: str, code: str, errors: list | None = None) -> dict:
-    payload = {"detail": detail, "code": code}
+def error_payload(detail: str, code: str, errors: Sequence[object] | None = None) -> dict:
+    payload: dict[str, object] = {"detail": detail, "code": code}
     if errors is not None:
         payload["errors"] = errors
     return payload
