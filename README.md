@@ -17,6 +17,9 @@
 	<a href="https://github.com/psf/black">
 		<img alt="Black" src="https://img.shields.io/badge/code%20style-black-000000">
 	</a>
+	<a href="https://github.com/Nebtakhet/backend-starter-api/actions/workflows/ci.yml">
+		<img alt="CI" src="https://github.com/Nebtakhet/backend-starter-api/actions/workflows/ci.yml/badge.svg">
+	</a>
 	<a href="https://github.com/pre-commit/pre-commit">
 		<img alt="pre-commit" src="https://img.shields.io/badge/pre--commit-enabled-brightgreen">
 	</a>
@@ -32,6 +35,8 @@
 	<a href="#-api-endpoints-summary">Endpoints</a>
 	·
 	<a href="#-tests">Tests</a>
+	·
+	<a href="#-quality-checks">Quality checks</a>
 	·
 	<a href="#-docker">Docker</a>
 </p>
@@ -86,7 +91,7 @@ backend-starter-api/
 ## 🚀 Quick start
 
 1) Create a .env file based on .env.example.
-2) Install dependencies: pip install -e .[dev]
+2) Install dependencies: pip install -e ".[dev]"
 3) Run the API: uvicorn app.main:app --reload
 4) Open docs: http://localhost:8000/docs
 
@@ -101,7 +106,7 @@ Create a virtual environment and install dependencies:
 
 python -m venv .venv
 source .venv/bin/activate
-pip install -e .[dev]
+pip install -e ".[dev]"
 
 Start the API locally:
 
@@ -142,6 +147,13 @@ docker compose up --build
 ## ✅ Tests
 
 pytest
+
+## ✅ Quality checks
+
+Run Ruff and mypy locally:
+
+ruff check .
+mypy app tests
 
 Docker:
 
