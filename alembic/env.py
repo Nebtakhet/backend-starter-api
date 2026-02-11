@@ -2,7 +2,6 @@
 
 from __future__ import with_statement
 
-import os
 from logging.config import fileConfig
 
 from alembic import context
