@@ -15,7 +15,7 @@ def create_item(
     data: ItemCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> ItemOut:
+) -> Item:
     item = Item(
         title=data.title,
         description=data.description,
@@ -31,7 +31,7 @@ def create_item(
 def read_items(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> list[ItemOut]:
+) -> list[Item]:
     return db.query(Item).filter(Item.owner_id == current_user.id).all()
 
 
@@ -40,7 +40,7 @@ def read_item(
     item_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> ItemOut:
+) -> Item:
     item = db.query(Item).filter(Item.id == item_id).first()
     if not item or item.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
@@ -53,7 +53,7 @@ def update_item(
     data: ItemUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> ItemOut:
+) -> Item:
     item = db.query(Item).filter(Item.id == item_id).first()
     if not item or item.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
