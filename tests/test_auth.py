@@ -4,6 +4,7 @@ import uuid
 
 from fastapi.testclient import TestClient
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.routing import APIRoute
 
 from app.main import app
 from app.api.deps import get_db
@@ -148,7 +149,10 @@ def test_me_rejects_invalid_token():
 def test_db_rollback_on_exception():
     # Ensure the request error rolls back the DB transaction.
     route_path = "/_test/rollback"
-    if not any(route.path == route_path for route in app.router.routes):
+    if not any(
+        isinstance(route, APIRoute) and route.path == route_path
+        for route in app.router.routes
+    ):
         router = APIRouter()
 
         @router.post(route_path)
