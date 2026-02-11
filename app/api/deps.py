@@ -54,7 +54,7 @@ def get_current_user(
             },
         )
         subject = payload.get("sub")
-        if subject is None:
+        if not isinstance(subject, str):
             raise credentials_exception
         token_data = TokenPayload(sub=subject)
     except JWTError:
