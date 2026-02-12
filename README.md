@@ -107,6 +107,7 @@ Create a virtual environment and install dependencies:
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
+pre-commit install
 
 Start the API locally:
 
@@ -155,6 +156,10 @@ Run Ruff and mypy locally:
 ruff check .
 ruff format .
 mypy app tests
+
+Pre-commit hooks run automatically on staged files. To run manually:
+
+pre-commit run --all-files
 
 Docker:
 
