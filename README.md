@@ -26,17 +26,17 @@
 </p>
 
 <p align="center">
-	<a href="#-quick-start">Quick start</a>
+	<a href="#-features">Features</a>
+	·
+	<a href="#-prerequisites">Prerequisites</a>
 	·
 	<a href="#-installation">Installation</a>
 	·
-	<a href="#-configuration">Configuration</a>
+	<a href="#-running-the-application">Running</a>
 	·
-	<a href="#-api-endpoints-summary">Endpoints</a>
+	<a href="#-development-workflow">Development</a>
 	·
-	<a href="#-tests">Tests</a>
-	·
-	<a href="#-quality-checks">Quality checks</a>
+	<a href="#-api-documentation">API Docs</a>
 	·
 	<a href="#-docker">Docker</a>
 </p>
