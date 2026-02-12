@@ -14,8 +14,8 @@
 	<a href="https://www.sqlalchemy.org/">
 		<img alt="SQLAlchemy" src="https://img.shields.io/badge/SQLAlchemy-2.0%2B-d71f00">
 	</a>
-	<a href="https://github.com/psf/black">
-		<img alt="Black" src="https://img.shields.io/badge/code%20style-black-000000">
+	<a href="https://docs.astral.sh/ruff/">
+		<img alt="Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json">
 	</a>
 	<a href="https://github.com/Nebtakhet/backend-starter-api/actions/workflows/ci.yml">
 		<img alt="CI" src="https://github.com/Nebtakhet/backend-starter-api/actions/workflows/ci.yml/badge.svg">
@@ -153,6 +153,7 @@ pytest
 Run Ruff and mypy locally:
 
 ruff check .
+ruff format .
 mypy app tests
 
 Docker:
