@@ -75,6 +75,8 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
         status_code=500,
         content=error_payload(detail="Database error", code="db_error"),
     )
+
+
 app.include_router(api_router, prefix="/api/v1")
 
 

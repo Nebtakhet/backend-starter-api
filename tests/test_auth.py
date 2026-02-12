@@ -150,8 +150,7 @@ def test_db_rollback_on_exception():
     # Ensure the request error rolls back the DB transaction.
     route_path = "/_test/rollback"
     if not any(
-        isinstance(route, APIRoute) and route.path == route_path
-        for route in app.router.routes
+        isinstance(route, APIRoute) and route.path == route_path for route in app.router.routes
     ):
         router = APIRouter()
 

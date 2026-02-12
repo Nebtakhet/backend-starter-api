@@ -5,7 +5,12 @@ from datetime import timedelta, timezone
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.security import create_access_token, create_refresh_token, hash_refresh_token, verify_password
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    hash_refresh_token,
+    verify_password,
+)
 from app.db.models import RefreshToken, User
 from app.schemas.auth import Token
 from app.services.user_service import get_user_by_email
@@ -44,11 +49,7 @@ def store_refresh_token(db: Session, user_id: int, raw_token: str) -> RefreshTok
 
 def rotate_refresh_token(db: Session, raw_token: str) -> Token | None:
     token_hash = hash_refresh_token(raw_token)
-    record = (
-        db.query(RefreshToken)
-        .filter(RefreshToken.token_hash == token_hash)
-        .first()
-    )
+    record = db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
     if not record:
         return None
     expires_at = record.expires_at
@@ -70,11 +71,7 @@ def rotate_refresh_token(db: Session, raw_token: str) -> Token | None:
 
 def revoke_refresh_token(db: Session, raw_token: str) -> bool:
     token_hash = hash_refresh_token(raw_token)
-    record = (
-        db.query(RefreshToken)
-        .filter(RefreshToken.token_hash == token_hash)
-        .first()
-    )
+    record = db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
     if not record or record.revoked:
         return False
     record.revoked = True
