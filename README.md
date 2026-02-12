@@ -43,176 +43,284 @@
 
 ## ✨ Features
 
-- FastAPI app scaffolded for growth
-- SQLAlchemy models + Alembic migrations
-- JWT auth with refresh tokens (hashed in DB)
-- Refresh token rotation + reuse detection (revokes all tokens)
-- Access token validation with iss/aud/iat + clock skew
-- Rate limiting on auth endpoints
-- Modular services, schemas, and API routers
-- Items CRUD with ownership enforcement
-- /users/me endpoint
-- Health endpoint
-- Test suite with pytest
+- **FastAPI** app scaffolded for growth with modular services, schemas, and API routers
+- **SQLAlchemy 2.0** models with **Alembic** migrations
+- **JWT authentication** with refresh token rotation and reuse detection
+- **Rate limiting** on auth endpoints
+- **Items CRUD** with ownership enforcement
+- Comprehensive **test suite** with pytest
+- **CI pipeline** with GitHub Actions (lint, format, typecheck, tests)
+- **Pre-commit hooks** for local quality enforcement
 
-## ⚡ At a glance
-
-| Layer | What’s included |
-| --- | --- |
-| Auth | Login, refresh, logout, hashed refresh tokens |
-| Users | Register, list, me |
-| Items | Full CRUD + ownership checks |
-| Ops | Health, Docker Compose, test coverage |
-
-## 🧭 Project structure
+## 🧭 Project Structure
 
 ```text
 backend-starter-api/
 ├── app/
-│   ├── __init__.py
-│   ├── main.py
-│   ├── core/
-│   ├── db/
-│   ├── schemas/
-│   ├── api/
-│   ├── services/
-│   └── utils/
-├── tests/
-├── alembic/
-├── .env.example
-├── .gitignore
-├── docker-compose.yml
-├── Dockerfile
-├── pyproject.toml
-├── README.md
-└── LICENSE
+│   ├── main.py              # FastAPI app, middleware, exception handlers
+│   ├── api/                 # API routes (v1)
+│   │   ├── deps.py          # Shared dependencies (get_db, get_current_user)
+│   │   └── v1/endpoints/    # Auth, users, items endpoints
+│   ├── core/                # Config, security, logging, rate limiting
+│   ├── db/                  # Database session, models, base
+│   ├── schemas/             # Pydantic schemas for validation
+│   ├── services/            # Business logic layer
+│   └── utils/               # Utilities
+├── tests/                   # Test suite
+├── alembic/                 # Database migrations
+├── .github/workflows/       # CI/CD pipelines
+├── pyproject.toml           # Project metadata and dependencies
+├── docker-compose.yml       # Docker orchestration
+└── Dockerfile               # Container image definition
 ```
 
-## 🚀 Quick start
+## 📋 Prerequisites
 
-1) Create a .env file based on .env.example.
-2) Install dependencies: pip install -e ".[dev]"
-3) Run the API: uvicorn app.main:app --reload
-4) Open docs: http://localhost:8000/docs
+Before you begin, ensure you have:
+
+- **Python 3.11 or higher** installed
+- **pip** and **venv** (usually included with Python)
+- **Git** for version control
+
+### Optional
+- **PostgreSQL** (for production-like local development)
+- **Docker** and **Docker Compose** (for containerized deployment)
 
 ## 📦 Installation
 
-Requirements:
-- Python 3.11+
-- (Optional) PostgreSQL
-- (Optional) Docker + Docker Compose
+### 1. Clone the repository
 
-Create a virtual environment and install dependencies:
+```bash
+git clone https://github.com/Nebtakhet/backend-starter-api.git
+cd backend-starter-api
+```
 
-python -m venv .venv
+### 2. Create and activate a virtual environment
+
+**On Linux/macOS:**
+```bash
+python3 -m venv .venv
 source .venv/bin/activate
+```
+
+**On Windows:**
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+### 3. Install dependencies
+
+```bash
+pip install --upgrade pip
 pip install -e ".[dev]"
+```
+
+This installs:
+- **Runtime dependencies**: FastAPI, SQLAlchemy, JWT libraries, etc.
+- **Development tools**: pytest, ruff, mypy, pre-commit
+
+### 4. Set up pre-commit hooks
+
+```bash
 pre-commit install
+```
 
-Start the API locally:
+Pre-commit hooks automatically run `ruff` (lint + format) on staged files before each commit.
 
+### 5. Configure environment variables
+
+Copy the example environment file and edit it:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set at minimum:
+- `SECRET_KEY` - Use a strong random string (32+ characters)
+- `REFRESH_TOKEN_SECRET` - Another strong random string
+- `SQLALCHEMY_DATABASE_URI` - Database connection string
+
+**Generate secure keys:**
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+**Database connection strings:**
+- SQLite (development): `sqlite:///./app.db`
+- PostgreSQL: `postgresql://user:password@localhost:5432/dbname`
+
+### 6. Initialize the database
+
+Apply migrations to create tables:
+
+```bash
+alembic upgrade head
+```
+
+## 🚀 Running the Application
+
+Start the development server:
+
+```bash
 uvicorn app.main:app --reload
+```
 
-## ⚙️ Configuration
+The API will be available at:
+- **Interactive docs**: http://localhost:8000/docs
+- **Alternative docs**: http://localhost:8000/redoc
+- **Health check**: http://localhost:8000/health
 
-Set the environment variables in your .env file. Use .env.example as the template.
+## 🔧 Development Workflow
 
-Required:
-- PROJECT_NAME
-- SECRET_KEY
-- REFRESH_TOKEN_SECRET
-- JWT_ISSUER
-- JWT_AUDIENCE
-- CLOCK_SKEW_SECONDS
-- ACCESS_TOKEN_EXPIRE_MINUTES
-- AUTH_LOGIN_RATE_LIMIT
-- AUTH_REFRESH_RATE_LIMIT
-- SQLALCHEMY_DATABASE_URI
+### Database Migrations
 
-Optional:
-- REFRESH_TOKEN_EXPIRE_DAYS
+Create a new migration after modifying models:
 
-Notes:
-- Default DB is SQLite unless SQLALCHEMY_DATABASE_URI is set.
-- Docker Compose uses Postgres and expects SQLALCHEMY_DATABASE_URI in .env.
+```bash
+alembic revision --autogenerate -m "description of changes"
+```
 
-## 🧱 Migrations
+Apply pending migrations:
 
-- Create a migration: alembic revision --autogenerate -m "init"
-- Apply migrations: alembic upgrade head
+```bash
+alembic upgrade head
+```
+
+### Running Tests
+
+Run the test suite:
+
+```bash
+pytest
+```
+
+Run with coverage:
+
+```bash
+pytest --cov=app --cov-report=html
+```
+
+### Quality Checks
+
+**Lint and format:**
+```bash
+ruff check .          # Check for issues
+ruff check . --fix    # Auto-fix issues
+ruff format .         # Format code
+```
+
+**Type checking:**
+```bash
+mypy app tests
+```
+
+**Pre-commit (run all checks manually):**
+```bash
+pre-commit run --all-files
+```
+
+The CI pipeline automatically runs all these checks on every push and pull request.
 
 ## 🐳 Docker
 
+### Quick Start
+
+Build and run with Docker Compose:
+
+```bash
 docker compose up --build
+```
 
-## ✅ Tests
+The API will be available at http://localhost:8000
 
-pytest
+### Running Tests in Docker
 
-## ✅ Quality checks
+```bash
+docker compose run --rm --no-deps -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db api sh -c "pip install -e '.[dev]' && python -m pytest"
+```
 
-Run Ruff and mypy locally:
+**Note**: Tests default to SQLite via environment overrides in [tests/conftest.py](tests/conftest.py).
 
-ruff check .
-ruff format .
-mypy app tests
+## 📚 API Documentation
 
-Pre-commit hooks run automatically on staged files. To run manually:
+### Authentication Flow
 
-pre-commit run --all-files
+1. **Register** a user: `POST /api/v1/users`
+2. **Login**: `POST /api/v1/auth/login` → Receive access + refresh tokens
+3. **Access protected endpoints** using access token in `Authorization: Bearer <token>` header
+4. **Refresh** tokens: `POST /api/v1/auth/refresh` → Rotates refresh token
+5. **Logout**: `POST /api/v1/auth/logout` → Revokes refresh token
 
-Docker:
+### Available Endpoints
 
-docker compose run --rm --no-deps -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db api sh -c "pip install -e .[dev] && python -m pytest"
+**Auth:**
+- `POST /api/v1/auth/login` - Login with email and password
+- `POST /api/v1/auth/refresh` - Refresh access token
+- `POST /api/v1/auth/logout` - Revoke refresh token
 
-Note: `python -m pytest` avoids PATH issues when dev tools are installed to the user site inside the container.
-Note: Tests default to SQLite via environment overrides in [tests/conftest.py](tests/conftest.py).
+**Users:**
+- `POST /api/v1/users` - Register a new user
+- `GET /api/v1/users` - List all users
+- `GET /api/v1/users/me` - Get current user profile
 
-## 🔐 Auth flow (summary)
+**Items** (authentication required):
+- `POST /api/v1/items` - Create a new item
+- `GET /api/v1/items` - List user's items
+- `GET /api/v1/items/{item_id}` - Get item by ID
+- `PUT /api/v1/items/{item_id}` - Update an item
+- `DELETE /api/v1/items/{item_id}` - Delete an item
 
-1) Register a user
-2) Login to receive access + refresh tokens
-3) Use access token for protected endpoints
-4) Refresh to rotate refresh token
-5) Logout to revoke refresh token
+**Health:**
+- `GET /health` - Health check endpoint
 
-## 📚 API endpoints (summary)
+### Error Format
 
-Auth:
-- POST /api/v1/auth/login
-- POST /api/v1/auth/refresh
-- POST /api/v1/auth/logout
+All errors follow a consistent format:
 
-Users:
-- POST /api/v1/users
-- GET /api/v1/users
-- GET /api/v1/users/me
+```json
+{
+  "detail": "Error message",
+  "code": "error_code",
+  "errors": [...]
+}
+```
 
-Items (auth required):
-- POST /api/v1/items
-- GET /api/v1/items
-- GET /api/v1/items/{item_id}
-- PUT /api/v1/items/{item_id}
-- DELETE /api/v1/items/{item_id}
+Error codes:
+- `validation_error` - Request validation failed
+- `auth_error` - Authentication/authorization failed
+- `db_integrity_error` - Database constraint violation
+- `db_error` - General database error
 
-Health:
-- GET /health
+## ⚙️ Configuration
 
-## 🧪 Error format
+### Environment Variables
 
-All errors follow a consistent shape:
+The following environment variables must be set in your `.env` file:
 
-{ "detail": "...", "code": "...", "errors": [...] }
+**Required:**
+- `PROJECT_NAME` - Application name
+- `SECRET_KEY` - Secret key for JWT access tokens (min 32 characters)
+- `REFRESH_TOKEN_SECRET` - Secret key for refresh tokens (min 32 characters)
+- `JWT_ISSUER` - JWT issuer claim (default: `backend-starter-api`)
+- `JWT_AUDIENCE` - JWT audience claim (default: `backend-starter-api`)
+- `CLOCK_SKEW_SECONDS` - Allowed clock skew for JWT validation (default: `30`)
+- `ACCESS_TOKEN_EXPIRE_MINUTES` - Access token lifetime (default: `60`)
+- `AUTH_LOGIN_RATE_LIMIT` - Rate limit for login endpoint (default: `5/minute`)
+- `AUTH_REFRESH_RATE_LIMIT` - Rate limit for refresh endpoint (default: `10/minute`)
+- `SQLALCHEMY_DATABASE_URI` - Database connection string
 
-Notes:
-- Validation errors use code validation_error and include errors.
-- Auth/authorization errors use code auth_error.
-- DB integrity errors use code db_integrity_error.
+**Optional:**
+- `REFRESH_TOKEN_EXPIRE_DAYS` - Refresh token lifetime (default: `30`)
+- `ENVIRONMENT` - Environment name (default: `development`)
 
-## 🧩 API versioning
+### Security Notes
 
-All routes are mounted under /api/v1 by default.
+- Never commit `.env` files to version control
+- Use strong, randomly generated keys for `SECRET_KEY` and `REFRESH_TOKEN_SECRET`
+- In production, use PostgreSQL instead of SQLite
+- The app validates that secret keys are not set to default values in production
 
 ## 📄 License
 
-See LICENSE
+See [LICENSE](LICENSE)
