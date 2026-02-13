@@ -49,7 +49,7 @@
 - **Rate limiting** on auth endpoints
 - **Items CRUD** with ownership enforcement
 - Comprehensive **test suite** with pytest
-- **CI pipeline** with GitHub Actions (lint, format, typecheck, tests)
+- **CI pipeline** with GitHub Actions (lint, format, typecheck, security audit, tests)
 - **Pre-commit hooks** for local quality enforcement
 
 ## 🧭 Project Structure
@@ -118,7 +118,7 @@ pip install -e ".[dev]"
 
 This installs:
 - **Runtime dependencies**: FastAPI, SQLAlchemy, JWT libraries, etc.
-- **Development tools**: pytest, ruff, mypy, pre-commit
+- **Development tools**: pytest, ruff, mypy, pre-commit, pip-audit
 
 ### 4. Set up pre-commit hooks
 
@@ -215,12 +215,17 @@ ruff format .         # Format code
 mypy app tests
 ```
 
+**Security audit:**
+```bash
+pip-audit             # Scan for known CVEs in dependencies
+```
+
 **Pre-commit (run all checks manually):**
 ```bash
 pre-commit run --all-files
 ```
 
-The CI pipeline automatically runs all these checks on every push and pull request.
+The CI pipeline automatically runs all these checks (lint, format, typecheck, security audit, and tests) on every push and pull request.
 
 ## 🐳 Docker
 
