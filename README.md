@@ -324,7 +324,7 @@ This prevents users from accessing/modifying other users' items—a fundamental 
 
 ### Service Layer vs API Layer
 
-- **API layer** (`app/api/`): Handles HTTP routing, request validation, and response serialization. Thin.
+- **API layer** (`app/api/`): Handles HTTP routing, request validation, and response serialization.
 - **Service layer** (`app/services/`): Contains business logic, DB queries, and invariant enforcement (e.g., ownership checks). Reusable.
 
 Separation of concerns makes the codebase testable and maintainable. If you add a CLI or gRPC endpoint later, reuse the service layer without duplicating logic.
