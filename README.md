@@ -297,6 +297,63 @@ Error codes:
 - `db_integrity_error` - Database constraint violation
 - `db_error` - General database error
 
+## 🏗️ Design & Architecture
+
+### JWT + Refresh Token Strategy
+
+This app uses **JWT access tokens** (short-lived) and **refresh tokens** (long-lived) because:
+
+- **Stateless auth**: No server-side session storage needed. Access token is verified with just the secret key.
+- **Scalability**: Any server can validate the token without checking a session store; perfect for distributed systems.
+- **Short expiry**: Access tokens expire quickly (60 min default), limiting damage from token theft.
+- **Refresh rotation**: Refresh tokens are rotated on every refresh, and old ones are invalidated if reused (detects token theft).
+
+**Why refresh tokens are hashed in the database:**
+- If the DB is compromised, attackers can't directly use the leaked tokens (hashes are one-way).
+- When a refresh token is used, we compare the incoming token's hash to the stored hash; they match only if it's the legitimate token.
+
+### Ownership Enforcement
+
+Items belong to users. The API enforces ownership at the service layer:
+
+```python
+db.query(Item).filter(Item.owner_id == current_user.id).all()
+```
+
+This prevents users from accessing/modifying other users' items—a fundamental multi-tenant security pattern. Without it, any authenticated user could modify anyone's data.
+
+### Service Layer vs API Layer
+
+- **API layer** (`app/api/`): Handles HTTP routing, request validation, and response serialization. Thin.
+- **Service layer** (`app/services/`): Contains business logic, DB queries, and invariant enforcement (e.g., ownership checks). Reusable.
+
+Separation of concerns makes the codebase testable and maintainable. If you add a CLI or gRPC endpoint later, reuse the service layer without duplicating logic.
+
+### Scaling Architecture
+
+This template is **stateless by design**, ready to scale:
+
+```
+┌─────────────────────────────────────┐
+│    Load Balancer (nginx, etc)       │
+├─────────────────────────────────────┤
+│ API Server 1 │ API Server 2 │ ... │  ← Stateless (no session affinity needed)
+├─────────────────────────────────────┤
+│           PostgreSQL Database       │  ← Persistent data (queries, auth)
+├─────────────────────────────────────┤
+│  Redis/Memcached (optional)         │  ← Cache layer for expensive queries
+│     Celery/RQ (optional)            │  ← Async job queue for long operations
+└─────────────────────────────────────┘
+```
+
+**Why this works:**
+- JWT tokens don't require session affinity; any server can validate them.
+- Database is the single source of truth.
+- Caching (Redis) speeds up frequent queries.
+- Job queues (Celery) handle async work (e.g., sending emails).
+
+To scale: add more API servers behind a load balancer, and upgrade the DB to a managed service (AWS RDS, Heroku Postgres, etc).
+
 ## ⚙️ Configuration
 
 ### Environment Variables
