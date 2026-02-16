@@ -15,11 +15,15 @@ from app.services.user_service import get_user_by_id
 
 
 def get_db() -> Generator[Session, None, None]:
-    # Provide a session per request and handle commit/rollback consistently.
+    """Provide a database session per request.
+    
+    The session is automatically closed after the request.
+    Commits should be done explicitly in services/endpoints.
+    Rollback happens automatically on exceptions.
+    """
     db = SessionLocal()
     try:
         yield db
-        db.commit()
     except Exception:
         db.rollback()
         raise
