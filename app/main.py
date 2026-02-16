@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -12,6 +13,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.api.v1.api import api_router
+from app.core.config import settings
 from app.core.logging import configure_logging
 from app.core.rate_limit import limiter
 from app.db.base import Base
@@ -31,6 +33,15 @@ app = FastAPI(title="Backend Starter API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
+
+# CORS middleware - configure allowed origins in settings
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def error_payload(detail: str, code: str, errors: Sequence[object] | None = None) -> dict:
