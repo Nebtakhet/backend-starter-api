@@ -1,4 +1,4 @@
-"""API v1 router composition."""
+# API v1 router composition.
 
 from fastapi import APIRouter
 

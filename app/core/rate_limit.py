@@ -1,4 +1,4 @@
-"""Shared rate limiter instance for API routes."""
+# Shared rate limiter instance for API routes.
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address

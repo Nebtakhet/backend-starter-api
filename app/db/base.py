@@ -1,10 +1,10 @@
-"""SQLAlchemy declarative base used across all models."""
+# SQLAlchemy declarative base used across all models.
 
 from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
-    pass
+	pass
 
 
 # Import models so SQLAlchemy registers them before create_all()

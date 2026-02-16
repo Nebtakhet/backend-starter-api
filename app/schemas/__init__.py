@@ -1,1 +1,1 @@
-"""Pydantic schema package."""
+# Pydantic schema package.
