@@ -18,7 +18,7 @@ from app.db.session import engine
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
-	# Create and teardown schema once for the test session.
-	Base.metadata.create_all(bind=engine)
-	yield
-	Base.metadata.drop_all(bind=engine)
+    # Create and teardown schema once for the test session.
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
