@@ -110,7 +110,7 @@ def health_check() -> dict:
             health_status["database"] = "connected"
         finally:
             db.close()
-    except Exception as e:
+    except Exception:
         health_status["status"] = "degraded"
         health_status["database"] = "disconnected"
     
