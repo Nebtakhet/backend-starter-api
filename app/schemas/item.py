@@ -22,3 +22,11 @@ class ItemOut(ItemBase):
     owner_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ItemListResponse(BaseModel):
+    """Paginated response for list of items."""
+    items: list[ItemOut]
+    total: int
+    skip: int
+    limit: int

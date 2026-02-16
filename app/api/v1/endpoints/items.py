@@ -1,11 +1,13 @@
 """Item CRUD endpoints scoped to the current user."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
 from app.db.models import Item, User
-from app.schemas.item import ItemCreate, ItemOut, ItemUpdate
+from app.schemas.item import ItemCreate, ItemListResponse, ItemOut, ItemUpdate
 
 router = APIRouter()
 
@@ -27,12 +29,18 @@ def create_item(
     return item
 
 
-@router.get("/", response_model=list[ItemOut])
+@router.get("/", response_model=ItemListResponse)
 def read_items(
+    skip: Annotated[int, Query(ge=0, description="Number of items to skip")] = 0,
+    limit: Annotated[int, Query(ge=1, le=100, description="Max items to return")] = 50,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> list[Item]:
-    return db.query(Item).filter(Item.owner_id == current_user.id).all()
+) -> ItemListResponse:
+    """List items for the current user with pagination."""
+    query = db.query(Item).filter(Item.owner_id == current_user.id)
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return ItemListResponse(items=items, total=total, skip=skip, limit=limit)
 
 
 @router.get("/{item_id}", response_model=ItemOut)
