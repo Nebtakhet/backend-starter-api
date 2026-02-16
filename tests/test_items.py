@@ -30,7 +30,10 @@ def login_user(email: str, password: str = "password123") -> dict:
 def test_health_check():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    data = response.json()
+    assert data["status"] == "ok"
+    assert "database" in data
+    assert data["database"] in ["connected", "disconnected"]
 
 
 def test_item_crud_and_ownership():
@@ -56,11 +59,15 @@ def test_item_crud_and_ownership():
 
     list_one = client.get("/api/v1/items/", headers=headers_one)
     assert list_one.status_code == 200
-    assert any(item["id"] == item_id for item in list_one.json())
+    list_one_data = list_one.json()
+    assert "items" in list_one_data
+    assert "total" in list_one_data
+    assert any(item["id"] == item_id for item in list_one_data["items"])
 
     list_two = client.get("/api/v1/items/", headers=headers_two)
     assert list_two.status_code == 200
-    assert all(item["id"] != item_id for item in list_two.json())
+    list_two_data = list_two.json()
+    assert all(item["id"] != item_id for item in list_two_data["items"])
 
     get_other = client.get(f"/api/v1/items/{item_id}", headers=headers_two)
     assert get_other.status_code == 404
