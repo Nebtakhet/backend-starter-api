@@ -10,36 +10,36 @@ from app.utils.time import utcnow
 
 
 class User(Base):
-	__tablename__ = "users"
+    __tablename__ = "users"
 
-	id: Mapped[int] = mapped_column(primary_key=True, index=True)
-	email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
-	hashed_password: Mapped[str] = mapped_column(String(255))
-	is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    hashed_password: Mapped[str] = mapped_column(String(255))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-	items: Mapped[list["Item"]] = relationship(back_populates="owner")
-	refresh_tokens: Mapped[list["RefreshToken"]] = relationship(back_populates="user")
+    items: Mapped[list["Item"]] = relationship(back_populates="owner")
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(back_populates="user")
 
 
 class Item(Base):
-	__tablename__ = "items"
+    __tablename__ = "items"
 
-	id: Mapped[int] = mapped_column(primary_key=True, index=True)
-	title: Mapped[str] = mapped_column(String(255))
-	description: Mapped[str | None] = mapped_column(String(255), default=None)
-	owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(String(255), default=None)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
-	owner: Mapped["User"] = relationship(back_populates="items")
+    owner: Mapped["User"] = relationship(back_populates="items")
 
 
 class RefreshToken(Base):
-	__tablename__ = "refresh_tokens"
+    __tablename__ = "refresh_tokens"
 
-	id: Mapped[int] = mapped_column(primary_key=True, index=True)
-	user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-	token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-	revoked: Mapped[bool] = mapped_column(Boolean, default=False)
-	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-	expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
-	user: Mapped["User"] = relationship(back_populates="refresh_tokens")
+    user: Mapped["User"] = relationship(back_populates="refresh_tokens")
