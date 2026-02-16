@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.api.v1.api import api_router
@@ -93,4 +94,24 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/health")
 def health_check() -> dict:
-    return {"status": "ok"}
+    """Health check endpoint with database connectivity verification."""
+    from app.db.session import SessionLocal
+    
+    health_status = {
+        "status": "ok",
+        "database": "unknown"
+    }
+    
+    # Test database connectivity
+    try:
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT 1"))
+            health_status["database"] = "connected"
+        finally:
+            db.close()
+    except Exception as e:
+        health_status["status"] = "degraded"
+        health_status["database"] = "disconnected"
+    
+    return health_status
