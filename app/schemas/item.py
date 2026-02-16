@@ -26,6 +26,7 @@ class ItemOut(ItemBase):
 
 class ItemListResponse(BaseModel):
     """Paginated response for list of items."""
+
     items: list[ItemOut]
     total: int
     skip: int

@@ -16,7 +16,7 @@ from app.services.user_service import get_user_by_id
 
 def get_db() -> Generator[Session, None, None]:
     """Provide a database session per request.
-    
+
     The session is automatically closed after the request.
     Commits should be done explicitly in services/endpoints.
     Rollback happens automatically on exceptions.

@@ -96,12 +96,9 @@ app.include_router(api_router, prefix="/api/v1")
 def health_check() -> dict:
     """Health check endpoint with database connectivity verification."""
     from app.db.session import SessionLocal
-    
-    health_status = {
-        "status": "ok",
-        "database": "unknown"
-    }
-    
+
+    health_status = {"status": "ok", "database": "unknown"}
+
     # Test database connectivity
     try:
         db = SessionLocal()
@@ -113,5 +110,5 @@ def health_check() -> dict:
     except Exception:
         health_status["status"] = "degraded"
         health_status["database"] = "disconnected"
-    
+
     return health_status
