@@ -40,7 +40,9 @@ def read_items(
     query = db.query(Item).filter(Item.owner_id == current_user.id)
     total = query.count()
     items = query.offset(skip).limit(limit).all()
-    return ItemListResponse(items=items, total=total, skip=skip, limit=limit)
+    # Convert ORM models to Pydantic schemas for type safety
+    item_schemas = [ItemOut.model_validate(item) for item in items]
+    return ItemListResponse(items=item_schemas, total=total, skip=skip, limit=limit)
 
 
 @router.get("/{item_id}", response_model=ItemOut)
