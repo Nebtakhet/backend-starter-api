@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     PROJECT_NAME: str = "Backend Starter API"
     API_V1_STR: str = "/api/v1"
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
     SECRET_KEY: str = Field(..., min_length=32)
     REFRESH_TOKEN_SECRET: str = Field(..., min_length=32)
     JWT_ISSUER: str = "backend-starter-api"
