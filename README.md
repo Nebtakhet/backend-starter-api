@@ -48,6 +48,10 @@
 - **JWT authentication** with refresh token rotation and reuse detection
 - **Rate limiting** on auth endpoints
 - **Items CRUD** with ownership enforcement
+- **Pagination** on list endpoints with total counts
+- **Health check** with database connectivity status
+- **CORS** support configurable via environment
+- **Timestamps** on core models (`created_at`, `updated_at`)
 - Comprehensive **test suite** with pytest
 - **CI pipeline** with GitHub Actions (lint, format, typecheck, security audit, tests)
 - **Pre-commit hooks** for local quality enforcement
@@ -169,7 +173,7 @@ uvicorn app.main:app --reload
 The API will be available at:
 - **Interactive docs**: http://localhost:8000/docs
 - **Alternative docs**: http://localhost:8000/redoc
-- **Health check**: http://localhost:8000/health
+- **Health check**: http://localhost:8000/health (includes database status)
 
 ## 🔧 Development Workflow
 
@@ -271,13 +275,13 @@ docker compose run --rm --no-deps -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db
 
 **Items** (authentication required):
 - `POST /api/v1/items` - Create a new item
-- `GET /api/v1/items` - List user's items
+- `GET /api/v1/items` - List user's items (paginated)
 - `GET /api/v1/items/{item_id}` - Get item by ID
 - `PUT /api/v1/items/{item_id}` - Update an item
 - `DELETE /api/v1/items/{item_id}` - Delete an item
 
 **Health:**
-- `GET /health` - Health check endpoint
+- `GET /health` - Health check endpoint (includes database status)
 
 ### Error Format
 
@@ -375,6 +379,7 @@ The following environment variables must be set in your `.env` file:
 **Optional:**
 - `REFRESH_TOKEN_EXPIRE_DAYS` - Refresh token lifetime (default: `30`)
 - `ENVIRONMENT` - Environment name (default: `development`)
+- `CORS_ORIGINS` - JSON array of allowed origins (default: `http://localhost:3000`, `http://localhost:5173`)
 
 ### Security Notes
 
