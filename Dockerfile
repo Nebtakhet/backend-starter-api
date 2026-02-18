@@ -9,6 +9,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY pyproject.toml README.md ./
+COPY app ./app
+COPY alembic ./alembic
 
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir . \
@@ -16,8 +18,6 @@ RUN pip install --no-cache-dir --upgrade pip \
     && adduser --system --ingroup app --home /home/app app \
     && mkdir -p /home/app \
     && chown -R app:app /app /home/app
-
-COPY --chown=app:app app ./app
 
 USER app
 
