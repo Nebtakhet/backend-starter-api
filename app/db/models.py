@@ -16,6 +16,12 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utcnow,
+        onupdate=utcnow,
+    )
 
     items: Mapped[list["Item"]] = relationship(back_populates="owner")
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(back_populates="user")
@@ -28,6 +34,12 @@ class Item(Base):
     title: Mapped[str] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(String(255), default=None)
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utcnow,
+        onupdate=utcnow,
+    )
 
     owner: Mapped["User"] = relationship(back_populates="items")
 
@@ -40,6 +52,11 @@ class RefreshToken(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utcnow,
+        onupdate=utcnow,
+    )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     user: Mapped["User"] = relationship(back_populates="refresh_tokens")
