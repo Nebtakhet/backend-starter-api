@@ -1,5 +1,6 @@
 # Tests for authentication flows and error handling.
 
+from datetime import timedelta
 import uuid
 
 from fastapi.testclient import TestClient
@@ -8,9 +9,10 @@ from fastapi.routing import APIRoute
 
 from app.main import app
 from app.api.deps import get_db
-from app.core.security import get_password_hash
-from app.db.models import User
+from app.core.security import get_password_hash, hash_refresh_token
+from app.db.models import RefreshToken, User
 from app.db.session import SessionLocal
+from app.utils.time import utcnow
 
 client = TestClient(app)
 
@@ -128,6 +130,79 @@ def test_refresh_with_invalid_token():
         json={"refresh_token": "invalid-token"},
     )
     assert response.status_code == 401
+
+
+def test_refresh_rejects_expired_token():
+    email = f"user-{uuid.uuid4().hex}@example.com"
+    register_user(email)
+    db = SessionLocal()
+    raw_token = f"expired-{uuid.uuid4().hex}"
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        assert user is not None
+        record = RefreshToken(
+            user_id=user.id,
+            token_hash=hash_refresh_token(raw_token),
+            expires_at=utcnow() - timedelta(minutes=1),
+        )
+        db.add(record)
+        db.commit()
+    finally:
+        db.close()
+
+    response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": raw_token},
+    )
+    assert response.status_code == 401
+
+
+def test_refresh_revoked_token_revokes_all():
+    email = f"user-{uuid.uuid4().hex}@example.com"
+    register_user(email)
+    db = SessionLocal()
+    revoked_token = f"revoked-{uuid.uuid4().hex}"
+    active_token = f"active-{uuid.uuid4().hex}"
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        assert user is not None
+        db.add_all(
+            [
+                RefreshToken(
+                    user_id=user.id,
+                    token_hash=hash_refresh_token(revoked_token),
+                    revoked=True,
+                    expires_at=utcnow() + timedelta(days=1),
+                ),
+                RefreshToken(
+                    user_id=user.id,
+                    token_hash=hash_refresh_token(active_token),
+                    revoked=False,
+                    expires_at=utcnow() + timedelta(days=1),
+                ),
+            ]
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    response = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": revoked_token},
+    )
+    assert response.status_code == 401
+
+    db = SessionLocal()
+    try:
+        active_record = (
+            db.query(RefreshToken)
+            .filter(RefreshToken.token_hash == hash_refresh_token(active_token))
+            .first()
+        )
+        assert active_record is not None
+        assert active_record.revoked is True
+    finally:
+        db.close()
 
 
 def test_logout_with_invalid_token_is_idempotent():
