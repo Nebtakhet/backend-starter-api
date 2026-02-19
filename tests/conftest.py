@@ -11,6 +11,7 @@ os.environ["REFRESH_TOKEN_SECRET"] = "test-refresh-secret-32-chars-0000"
 os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite:///./test.db"
 os.environ["AUTH_LOGIN_RATE_LIMIT"] = "1000/minute"
 os.environ["AUTH_REFRESH_RATE_LIMIT"] = "1000/minute"
+os.environ["REDIS_URL"] = "memory://"
 
 from app.db.base import Base
 from app.db.session import engine

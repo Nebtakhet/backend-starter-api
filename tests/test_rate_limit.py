@@ -14,6 +14,7 @@ def build_app_with_limits(login_limit: str, refresh_limit: str):
     os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite:///./test.db"
     os.environ["AUTH_LOGIN_RATE_LIMIT"] = login_limit
     os.environ["AUTH_REFRESH_RATE_LIMIT"] = refresh_limit
+    os.environ["REDIS_URL"] = "memory://"
 
     # Clear cached app modules to re-evaluate settings and rate limits.
     for name in list(sys.modules):
