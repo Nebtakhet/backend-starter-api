@@ -18,6 +18,8 @@ dependencies = [
     "python-multipart>=0.0.9",
     "psycopg2-binary>=2.9.9",
     "slowapi>=0.1.9",
+    "redis>=5.0.0",
+    "fastapi-cache2>=0.2.1",
 ]
 
 [project.optional-dependencies]
