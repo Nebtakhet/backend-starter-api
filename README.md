@@ -52,17 +52,17 @@
 - **FastAPI** app scaffolded for growth with modular services, schemas, and API routers
 - **SQLAlchemy 2.0** models with **Alembic** migrations
 - **JWT authentication** with refresh token rotation and reuse detection
-- **Rate limiting** on auth endpoints
-- **Items CRUD** with ownership enforcement
-- **Pagination** on list endpoints with total counts
-- **Health check** with database connectivity status
+- **Rate limiting** on auth endpoints with Redis-backed storage (scales across instances)
+- **Items CRUD** with ownership enforcement and pagination
+- **Health check** endpoint with database connectivity status
 - **CORS** support configurable via environment
 - **Timestamps** on core models (`created_at`, `updated_at`)
-- **Redis-backed caching** for selected responses
-- **Redis-backed rate limiting** storage for multi-instance deployments
-- Comprehensive **test suite** with pytest
+- **async/await** endpoints for high concurrency
+- **Type-safe** codebase with mypy validation
+- Comprehensive **test suite** (23+ tests) with pytest
 - **CI pipeline** with GitHub Actions (lint, format, typecheck, security audit, tests)
 - **Pre-commit hooks** for local quality enforcement
+- **Docker** support with multi-service compose (API, PostgreSQL, Redis)
 
 ## 🧪 Project Status
 
@@ -147,11 +147,10 @@ Edit `.env` and set at minimum:
 - `REFRESH_TOKEN_SECRET` (32+ chars)
 - `SQLALCHEMY_DATABASE_URI`
 
-Optional but recommended:
-- `REDIS_URL` (default `redis://localhost:6379/0`)
-- `CACHE_TTL_SECONDS` (default `30`)
+Optional:
+- `REDIS_URL` (default `redis://localhost:6379/0`; used for rate limiting storage)
 
-If you do not want Redis locally, set:
+If you do not want Redis locally, rate limiting will use in-memory storage (not recommended for multi-instance deployments):
 ```bash
 REDIS_URL="memory://"
 ```
@@ -425,8 +424,7 @@ The following environment variables must be set in your `.env` file:
 - `REFRESH_TOKEN_EXPIRE_DAYS` - Refresh token lifetime (default: `30`)
 - `ENVIRONMENT` - Environment name (default: `development`)
 - `CORS_ORIGINS` - JSON array of allowed origins (default: `http://localhost:3000`, `http://localhost:5173`)
-- `REDIS_URL` - Redis connection string (default: `redis://localhost:6379/0`)
-- `CACHE_TTL_SECONDS` - Default response cache TTL (default: `30`)
+- `REDIS_URL` - Redis connection string for rate limiting (default: `redis://localhost:6379/0`)
 
 ### Security Notes
 
