@@ -28,17 +28,23 @@
 <p align="center">
 	<a href="#-features">Features</a>
 	·
+	<a href="#-project-status">Project Status</a>
+	·
 	<a href="#-prerequisites">Prerequisites</a>
 	·
-	<a href="#-installation">Installation</a>
+	<a href="#-local-setup-venv">Local Setup</a>
 	·
 	<a href="#-running-the-application">Running</a>
 	·
-	<a href="#-development-workflow">Development</a>
+	<a href="#-testing">Testing</a>
+	·
+	<a href="#-quality-checks">Quality Checks</a>
 	·
 	<a href="#-api-documentation">API Docs</a>
 	·
 	<a href="#-docker">Docker</a>
+	·
+	<a href="#-configuration">Configuration</a>
 </p>
 
 ## ✨ Features
@@ -52,9 +58,18 @@
 - **Health check** with database connectivity status
 - **CORS** support configurable via environment
 - **Timestamps** on core models (`created_at`, `updated_at`)
+- **Redis-backed caching** for selected responses
+- **Redis-backed rate limiting** storage for multi-instance deployments
 - Comprehensive **test suite** with pytest
 - **CI pipeline** with GitHub Actions (lint, format, typecheck, security audit, tests)
 - **Pre-commit hooks** for local quality enforcement
+
+## 🧪 Project Status
+
+- **Active development**: This is a starter template meant to be customized.
+- **Production readiness**: Not production hardened out of the box (review security, config, and scaling needs).
+- **Database**: Models are stable; generate Alembic migrations after changes.
+- **Caching/rate limiting**: Redis-backed by default; see configuration below.
 
 ## 🧭 Project Structure
 
@@ -89,77 +104,77 @@ Before you begin, ensure you have:
 ### Optional
 - **PostgreSQL** (for production-like local development)
 - **Docker** and **Docker Compose** (for containerized deployment)
+- **Redis** (for caching and rate limit storage; optional for local dev)
 
-## 📦 Installation
+## 📦 Local Setup (venv)
 
-### 1. Clone the repository
+### Step 1: Clone the repository
 
 ```bash
 git clone https://github.com/Nebtakhet/backend-starter-api.git
 cd backend-starter-api
 ```
 
-### 2. Create and activate a virtual environment
+### Step 2: Create and activate a virtual environment
 
-**On Linux/macOS:**
+**Linux/macOS:**
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-**On Windows:**
+**Windows:**
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 ```
 
-### 3. Install dependencies
+### Step 3: Install dependencies
 
 ```bash
 pip install --upgrade pip
 pip install -e ".[dev]"
 ```
 
-This installs:
-- **Runtime dependencies**: FastAPI, SQLAlchemy, JWT libraries, etc.
-- **Development tools**: pytest, ruff, mypy, pre-commit, pip-audit
-
-### 4. Set up pre-commit hooks
-
-```bash
-pre-commit install
-```
-
-Pre-commit hooks automatically run `ruff` (lint + format) on staged files before each commit.
-
-### 5. Configure environment variables
-
-Copy the example environment file and edit it:
+### Step 4: Configure environment variables
 
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` and set at minimum:
-- `SECRET_KEY` - Use a strong random string (32+ characters)
-- `REFRESH_TOKEN_SECRET` - Another strong random string
-- `SQLALCHEMY_DATABASE_URI` - Database connection string
+- `SECRET_KEY` (32+ chars)
+- `REFRESH_TOKEN_SECRET` (32+ chars)
+- `SQLALCHEMY_DATABASE_URI`
 
-**Generate secure keys:**
+Optional but recommended:
+- `REDIS_URL` (default `redis://localhost:6379/0`)
+- `CACHE_TTL_SECONDS` (default `30`)
+
+If you do not want Redis locally, set:
+```bash
+REDIS_URL="memory://"
+```
+
+Generate secure keys:
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-**Database connection strings:**
-- SQLite (development): `sqlite:///./app.db`
+Database examples:
+- SQLite: `sqlite:///./app.db`
 - PostgreSQL: `postgresql://user:password@localhost:5432/dbname`
 
-### 6. Initialize the database
-
-Apply migrations to create tables:
+### Step 5: Initialize the database
 
 ```bash
 alembic upgrade head
+```
+
+### Step 6: (Optional) Pre-commit hooks
+
+```bash
+pre-commit install
 ```
 
 ## 🚀 Running the Application
@@ -191,21 +206,31 @@ Apply pending migrations:
 alembic upgrade head
 ```
 
-### Running Tests
+## 🧪 Testing
 
-Run the test suite:
+### Step 1: Ensure required env vars are set
+
+Tests override settings in [tests/conftest.py](tests/conftest.py), but you can still set:
+
+```bash
+export SECRET_KEY="test-secret-key-32-chars-min-000000"
+export REFRESH_TOKEN_SECRET="test-refresh-secret-32-chars-0000"
+export SQLALCHEMY_DATABASE_URI="sqlite:///./test.db"
+export REDIS_URL="memory://"
+```
+
+### Step 2: Run tests
 
 ```bash
 pytest
 ```
 
-Run with coverage:
-
+Coverage report:
 ```bash
 pytest --cov=app --cov-report=html
 ```
 
-### Quality Checks
+## ✅ Quality Checks
 
 **Lint and format:**
 ```bash
@@ -233,7 +258,27 @@ The CI pipeline automatically runs all these checks (lint, format, typecheck, se
 
 ## 🐳 Docker
 
-### Quick Start
+### Quick Start (Docker Compose)
+
+Step 1: Start the stack
+
+```bash
+docker compose up --build
+```
+
+Step 2: Verify the API is healthy
+
+```bash
+curl http://localhost:8000/health
+```
+
+Step 3: Open docs
+
+- http://localhost:8000/docs
+
+Redis is included in the compose stack for caching and rate limiting.
+
+### Full Compose Run
 
 Build and run with Docker Compose:
 
@@ -380,6 +425,8 @@ The following environment variables must be set in your `.env` file:
 - `REFRESH_TOKEN_EXPIRE_DAYS` - Refresh token lifetime (default: `30`)
 - `ENVIRONMENT` - Environment name (default: `development`)
 - `CORS_ORIGINS` - JSON array of allowed origins (default: `http://localhost:3000`, `http://localhost:5173`)
+- `REDIS_URL` - Redis connection string (default: `redis://localhost:6379/0`)
+- `CACHE_TTL_SECONDS` - Default response cache TTL (default: `30`)
 
 ### Security Notes
 
