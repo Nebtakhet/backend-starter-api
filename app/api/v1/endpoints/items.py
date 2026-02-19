@@ -2,24 +2,14 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi_cache.decorator import cache
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
-from app.core.config import settings
 from app.db.models import Item, User
 from app.schemas.item import ItemCreate, ItemListResponse, ItemOut, ItemUpdate
 
 router = APIRouter()
-
-
-def items_cache_key_builder(func, namespace, request, response, args, kwargs):
-    user = kwargs.get("current_user")
-    user_id = getattr(user, "id", "anon")
-    skip = kwargs.get("skip")
-    limit = kwargs.get("limit")
-    return f"{namespace}:user={user_id}:skip={skip}:limit={limit}"
 
 
 @router.post("/", response_model=ItemOut, status_code=status.HTTP_201_CREATED)
@@ -40,17 +30,11 @@ def create_item(
 
 
 @router.get("/", response_model=ItemListResponse)
-@cache(
-    expire=settings.CACHE_TTL_SECONDS,
-    namespace="items",
-    key_builder=items_cache_key_builder,
-)
-def read_items(
+async def read_items(
     skip: Annotated[int, Query(ge=0, description="Number of items to skip")] = 0,
     limit: Annotated[int, Query(ge=1, le=100, description="Max items to return")] = 50,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    request: Request | None = None,
 ) -> ItemListResponse:
     # List items for the current user with pagination.
     query = db.query(Item).filter(Item.owner_id == current_user.id)
