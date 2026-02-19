@@ -7,6 +7,11 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
+from fastapi_cache.backends.redis import RedisBackend
+from fastapi_cache.decorator import cache
+from redis import asyncio as redis
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -27,7 +32,14 @@ configure_logging()
 async def lifespan(app: FastAPI):
     # Ensure tables exist on startup for local/dev usage.
     Base.metadata.create_all(bind=engine)
+    cache_backend = InMemoryBackend()
+    if settings.REDIS_URL.startswith("redis://") or settings.REDIS_URL.startswith("rediss://"):
+        redis_client = redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
+        cache_backend = RedisBackend(redis_client)
+    FastAPICache.init(cache_backend, prefix="backend-starter-cache")
     yield
+    if isinstance(cache_backend, RedisBackend):
+        await cache_backend.redis.close()
 
 
 app = FastAPI(title="Backend Starter API", lifespan=lifespan)
@@ -93,6 +105,7 @@ app.include_router(api_router, prefix="/api/v1")
 
 
 @app.get("/health")
+@cache(expire=settings.CACHE_TTL_SECONDS, namespace="health")
 def health_check() -> dict:
     # Health check endpoint with database connectivity verification.
     from app.db.session import SessionLocal
