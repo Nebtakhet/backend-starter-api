@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     AUTH_LOGIN_RATE_LIMIT: str = "5/minute"
     AUTH_REFRESH_RATE_LIMIT: str = "10/minute"
+    REDIS_URL: str = "redis://localhost:6379/0"
+    CACHE_TTL_SECONDS: int = 30
     SQLALCHEMY_DATABASE_URI: str = Field(...)
 
     @model_validator(mode="after")
