@@ -160,6 +160,14 @@ Generate secure keys:
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
+Password requirements for user registration (`POST /api/v1/users`):
+- Minimum 12 characters
+- At least one lowercase letter
+- At least one uppercase letter
+- At least one number
+- At least one special character
+- No spaces
+
 Database examples:
 - SQLite: `sqlite:///./app.db`
 - PostgreSQL: `postgresql://user:password@localhost:5432/dbname`
@@ -302,8 +310,9 @@ docker compose run --rm --no-deps -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db
 1. **Register** a user: `POST /api/v1/users`
 2. **Login**: `POST /api/v1/auth/login` → Receive access + refresh tokens
 3. **Access protected endpoints** using access token in `Authorization: Bearer <token>` header
-4. **Refresh** tokens: `POST /api/v1/auth/refresh` → Rotates refresh token
-5. **Logout**: `POST /api/v1/auth/logout` → Revokes refresh token
+4. **Change password**: `POST /api/v1/users/me/password` → Requires current password and a policy-compliant new password
+5. **Refresh** tokens: `POST /api/v1/auth/refresh` → Rotates refresh token
+6. **Logout**: `POST /api/v1/auth/logout` → Revokes refresh token
 
 ### Available Endpoints
 
@@ -316,6 +325,7 @@ docker compose run --rm --no-deps -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db
 - `POST /api/v1/users` - Register a new user
 - `GET /api/v1/users` - List all users
 - `GET /api/v1/users/me` - Get current user profile
+- `POST /api/v1/users/me/password` - Change current user's password
 
 **Items** (authentication required):
 - `POST /api/v1/items` - Create a new item
