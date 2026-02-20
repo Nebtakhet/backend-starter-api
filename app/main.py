@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from contextlib import asynccontextmanager
 
+from fastapi.encoders import jsonable_encoder
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,12 +55,13 @@ def error_payload(detail: str, code: str, errors: Sequence[object] | None = None
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = jsonable_encoder(exc.errors())
     return JSONResponse(
         status_code=422,
         content=error_payload(
             detail="Validation error",
             code="validation_error",
-            errors=exc.errors(),
+            errors=errors,
         ),
     )
 
