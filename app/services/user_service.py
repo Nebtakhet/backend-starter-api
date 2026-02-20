@@ -27,9 +27,7 @@ def list_users(db: Session) -> list[User]:
     return db.query(User).all()
 
 
-def change_user_password(
-    db: Session, user: User, current_password: str, new_password: str
-) -> bool:
+def change_user_password(db: Session, user: User, current_password: str, new_password: str) -> bool:
     if not verify_password(current_password, user.hashed_password):
         return False
     user.hashed_password = get_password_hash(new_password)
