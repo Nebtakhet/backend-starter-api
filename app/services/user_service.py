@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import Session
 
-from app.core.security import get_password_hash
+from app.core.security import get_password_hash, verify_password
 from app.db.models import User
 from app.schemas.user import UserCreate
 
@@ -25,3 +25,14 @@ def create_user(db: Session, data: UserCreate) -> User:
 
 def list_users(db: Session) -> list[User]:
     return db.query(User).all()
+
+
+def change_user_password(
+    db: Session, user: User, current_password: str, new_password: str
+) -> bool:
+    if not verify_password(current_password, user.hashed_password):
+        return False
+    user.hashed_password = get_password_hash(new_password)
+    db.commit()
+    db.refresh(user)
+    return True
