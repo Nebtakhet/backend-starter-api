@@ -18,7 +18,7 @@ client = TestClient(app)
 
 
 # Helpers for common auth flows.
-def register_user(email: str, password: str = "password123") -> None:
+def register_user(email: str, password: str = "StrongPass123!") -> None:
     response = client.post(
         "/api/v1/users/",
         json={"email": email, "password": password},
@@ -26,7 +26,7 @@ def register_user(email: str, password: str = "password123") -> None:
     assert response.status_code == 201
 
 
-def login_user(email: str, password: str = "password123") -> dict:
+def login_user(email: str, password: str = "StrongPass123!") -> dict:
     response = client.post(
         "/api/v1/auth/login",
         json={"email": email, "password": password},
@@ -48,9 +48,17 @@ def test_register_duplicate_email_fails():
     register_user(email)
     response = client.post(
         "/api/v1/users/",
-        json={"email": email, "password": "password123"},
+        json={"email": email, "password": "StrongPass123!"},
     )
     assert response.status_code == 400
+
+
+def test_register_weak_password_fails():
+    response = client.post(
+        "/api/v1/users/",
+        json={"email": f"weak-{uuid.uuid4().hex}@example.com", "password": "password123"},
+    )
+    assert response.status_code == 422
 
 
 def test_me_requires_auth():
@@ -219,6 +227,63 @@ def test_me_rejects_invalid_token():
         headers={"Authorization": "Bearer invalid"},
     )
     assert response.status_code == 401
+
+
+def test_change_password_success_and_login_with_new_password():
+    email = f"user-{uuid.uuid4().hex}@example.com"
+    old_password = "StrongPass123!"
+    new_password = "NewStrongPass123!"
+
+    register_user(email, old_password)
+    tokens = login_user(email, old_password)
+    access_token = tokens["access_token"]
+
+    change_response = client.post(
+        "/api/v1/users/me/password",
+        json={"current_password": old_password, "new_password": new_password},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert change_response.status_code == 204
+
+    old_login_response = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": old_password},
+    )
+    assert old_login_response.status_code == 401
+
+    new_login_response = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": new_password},
+    )
+    assert new_login_response.status_code == 200
+
+
+def test_change_password_rejects_invalid_current_password():
+    email = f"user-{uuid.uuid4().hex}@example.com"
+    register_user(email)
+    tokens = login_user(email)
+    access_token = tokens["access_token"]
+
+    response = client.post(
+        "/api/v1/users/me/password",
+        json={"current_password": "WrongPass123!", "new_password": "ValidNewPass123!"},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == 401
+
+
+def test_change_password_rejects_weak_new_password():
+    email = f"user-{uuid.uuid4().hex}@example.com"
+    register_user(email)
+    tokens = login_user(email)
+    access_token = tokens["access_token"]
+
+    response = client.post(
+        "/api/v1/users/me/password",
+        json={"current_password": "StrongPass123!", "new_password": "password123"},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == 422
 
 
 def test_db_rollback_on_exception():

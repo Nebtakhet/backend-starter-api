@@ -12,7 +12,7 @@ from app.main import app
 client = TestClient(app)
 
 
-def register_user(email: str, password: str = "password123") -> None:
+def register_user(email: str, password: str = "StrongPass123!") -> None:
     response = client.post(
         "/api/v1/users/",
         json={"email": email, "password": password},
@@ -20,7 +20,7 @@ def register_user(email: str, password: str = "password123") -> None:
     assert response.status_code == 201
 
 
-def login_user(email: str, password: str = "password123") -> dict:
+def login_user(email: str, password: str = "StrongPass123!") -> dict:
     response = client.post(
         "/api/v1/auth/login",
         json={"email": email, "password": password},
