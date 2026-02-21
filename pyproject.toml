@@ -1,10 +1,18 @@
 [project]
 name = "backend-starter-api"
-version = "0.1.0"
-description = "Starter backend API with FastAPI"
+version = "0.2.0"
+description = "Production-adjacent FastAPI starter with JWT auth, robust password policy, rate limiting, and 95%+ test coverage"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
+keywords = ["fastapi", "api", "jwt", "auth", "starter-template", "sqlalchemy"]
+
+[project.urls]
+"Homepage" = "https://github.com/Nebtakhet/backend-starter-api"
+"Repository" = "https://github.com/Nebtakhet/backend-starter-api.git"
+"Issues" = "https://github.com/Nebtakhet/backend-starter-api/issues"
+"Documentation" = "https://github.com/Nebtakhet/backend-starter-api#readme"
+
 dependencies = [
     "fastapi>=0.111.0",
     "uvicorn[standard]>=0.30.0",
@@ -25,6 +33,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.2.0",
+    "pytest-cov>=5.0.0",
     "httpx>=0.27.0",
     "ruff>=0.5.0",
     "mypy>=1.10.0",
