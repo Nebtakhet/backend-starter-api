@@ -59,7 +59,8 @@
 - **Timestamps** on core models (`created_at`, `updated_at`)
 - **async/await** endpoints for high concurrency
 - **Type-safe** codebase with mypy validation
-- Comprehensive **test suite** (23+ tests) with pytest
+- Comprehensive **test suite** (27 tests with 95.5% code coverage) using pytest and pytest-cov
+- **Code coverage measurement** with detailed reports (HTML, terminal, missing lines)
 - **CI pipeline** with GitHub Actions (lint, format, typecheck, security audit, tests)
 - **Pre-commit hooks** for local quality enforcement
 - **Docker** support with multi-service compose (API, PostgreSQL, Redis)
@@ -232,18 +233,38 @@ export REDIS_URL="memory://"
 pytest
 ```
 
-Coverage report:
+### Step 3: Code coverage
+
+Generate and view code coverage reports:
+
+**Terminal summary:**
 ```bash
-pytest --cov=app --cov-report=html
+pytest tests/ --cov=app --cov-report=term-missing
 ```
+
+**HTML report (interactive):**
+```bash
+pytest tests/ --cov=app --cov-report=html
+open htmlcov/index.html    # macOS
+xdg-open htmlcov/index.html  # Linux
+start htmlcov/index.html     # Windows
+```
+
+**With coverage threshold (fail if < 80%):**
+```bash
+pytest tests/ --cov=app --cov-fail-under=80
+```
+
+Current coverage: **95.5%** across app/ (467 statements, 21 uncovered edge cases)
 
 ## ✅ Quality Checks
 
-**Lint and format:**
+**Lint, format, and coverage:**
 ```bash
 ruff check .          # Check for issues
 ruff check . --fix    # Auto-fix issues
 ruff format .         # Format code
+pytest tests/ --cov=app --cov-report=term-missing  # Show coverage
 ```
 
 **Type checking:**
