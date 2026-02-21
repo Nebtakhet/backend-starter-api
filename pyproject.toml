@@ -6,13 +6,6 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 keywords = ["fastapi", "api", "jwt", "auth", "starter-template", "sqlalchemy"]
-
-[project.urls]
-"Homepage" = "https://github.com/Nebtakhet/backend-starter-api"
-"Repository" = "https://github.com/Nebtakhet/backend-starter-api.git"
-"Issues" = "https://github.com/Nebtakhet/backend-starter-api/issues"
-"Documentation" = "https://github.com/Nebtakhet/backend-starter-api#readme"
-
 dependencies = [
     "fastapi>=0.111.0",
     "uvicorn[standard]>=0.30.0",
@@ -29,6 +22,12 @@ dependencies = [
     "redis>=5.0.0",
     "fastapi-cache2>=0.2.1",
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/Nebtakhet/backend-starter-api"
+"Repository" = "https://github.com/Nebtakhet/backend-starter-api.git"
+"Issues" = "https://github.com/Nebtakhet/backend-starter-api/issues"
+"Documentation" = "https://github.com/Nebtakhet/backend-starter-api#readme"
 
 [project.optional-dependencies]
 dev = [
