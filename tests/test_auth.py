@@ -1,11 +1,13 @@
 # Tests for authentication flows and error handling.
 
+import asyncio
 from datetime import timedelta
 import uuid
 
 from fastapi.testclient import TestClient
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.routing import APIRoute
+from sqlalchemy import select
 
 from app.main import app
 from app.api.deps import get_db
@@ -15,6 +17,64 @@ from app.db.session import SessionLocal
 from app.utils.time import utcnow
 
 client = TestClient(app)
+
+
+def _run(coro):
+    return asyncio.run(coro)
+
+
+async def _insert_expired_refresh_token(email: str, raw_token: str) -> None:
+    async with SessionLocal() as db:
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalars().first()
+        assert user is not None
+        record = RefreshToken(
+            user_id=user.id,
+            token_hash=hash_refresh_token(raw_token),
+            expires_at=utcnow() - timedelta(minutes=1),
+        )
+        db.add(record)
+        await db.commit()
+
+
+async def _insert_revoked_and_active_tokens(
+    email: str, revoked_token: str, active_token: str
+) -> None:
+    async with SessionLocal() as db:
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalars().first()
+        assert user is not None
+        db.add_all(
+            [
+                RefreshToken(
+                    user_id=user.id,
+                    token_hash=hash_refresh_token(revoked_token),
+                    revoked=True,
+                    expires_at=utcnow() + timedelta(days=1),
+                ),
+                RefreshToken(
+                    user_id=user.id,
+                    token_hash=hash_refresh_token(active_token),
+                    revoked=False,
+                    expires_at=utcnow() + timedelta(days=1),
+                ),
+            ]
+        )
+        await db.commit()
+
+
+async def _get_refresh_token_record(token: str) -> RefreshToken | None:
+    async with SessionLocal() as db:
+        result = await db.execute(
+            select(RefreshToken).where(RefreshToken.token_hash == hash_refresh_token(token))
+        )
+        return result.scalars().first()
+
+
+async def _get_user_by_email(email: str) -> User | None:
+    async with SessionLocal() as db:
+        result = await db.execute(select(User).where(User.email == email))
+        return result.scalars().first()
 
 
 # Helpers for common auth flows.
@@ -143,20 +203,8 @@ def test_refresh_with_invalid_token():
 def test_refresh_rejects_expired_token():
     email = f"user-{uuid.uuid4().hex}@example.com"
     register_user(email)
-    db = SessionLocal()
     raw_token = f"expired-{uuid.uuid4().hex}"
-    try:
-        user = db.query(User).filter(User.email == email).first()
-        assert user is not None
-        record = RefreshToken(
-            user_id=user.id,
-            token_hash=hash_refresh_token(raw_token),
-            expires_at=utcnow() - timedelta(minutes=1),
-        )
-        db.add(record)
-        db.commit()
-    finally:
-        db.close()
+    _run(_insert_expired_refresh_token(email, raw_token))
 
     response = client.post(
         "/api/v1/auth/refresh",
@@ -168,31 +216,9 @@ def test_refresh_rejects_expired_token():
 def test_refresh_revoked_token_revokes_all():
     email = f"user-{uuid.uuid4().hex}@example.com"
     register_user(email)
-    db = SessionLocal()
     revoked_token = f"revoked-{uuid.uuid4().hex}"
     active_token = f"active-{uuid.uuid4().hex}"
-    try:
-        user = db.query(User).filter(User.email == email).first()
-        assert user is not None
-        db.add_all(
-            [
-                RefreshToken(
-                    user_id=user.id,
-                    token_hash=hash_refresh_token(revoked_token),
-                    revoked=True,
-                    expires_at=utcnow() + timedelta(days=1),
-                ),
-                RefreshToken(
-                    user_id=user.id,
-                    token_hash=hash_refresh_token(active_token),
-                    revoked=False,
-                    expires_at=utcnow() + timedelta(days=1),
-                ),
-            ]
-        )
-        db.commit()
-    finally:
-        db.close()
+    _run(_insert_revoked_and_active_tokens(email, revoked_token, active_token))
 
     response = client.post(
         "/api/v1/auth/refresh",
@@ -200,17 +226,9 @@ def test_refresh_revoked_token_revokes_all():
     )
     assert response.status_code == 401
 
-    db = SessionLocal()
-    try:
-        active_record = (
-            db.query(RefreshToken)
-            .filter(RefreshToken.token_hash == hash_refresh_token(active_token))
-            .first()
-        )
-        assert active_record is not None
-        assert active_record.revoked is True
-    finally:
-        db.close()
+    active_record = _run(_get_refresh_token_record(active_token))
+    assert active_record is not None
+    assert active_record.revoked is True
 
 
 def test_logout_with_invalid_token_is_idempotent():
@@ -295,7 +313,7 @@ def test_db_rollback_on_exception():
         router = APIRouter()
 
         @router.post(route_path)
-        def force_rollback(payload: dict, db=Depends(get_db)):
+        async def force_rollback(payload: dict, db=Depends(get_db)):
             user = User(
                 email=payload["email"],
                 hashed_password=get_password_hash("password123"),
@@ -312,9 +330,5 @@ def test_db_rollback_on_exception():
     response = client.post(route_path, json={"email": email})
     assert response.status_code == 400
 
-    db = SessionLocal()
-    try:
-        found = db.query(User).filter(User.email == email).first()
-        assert found is None
-    finally:
-        db.close()
+    found = _run(_get_user_by_email(email))
+    assert found is None
