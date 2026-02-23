@@ -50,11 +50,12 @@
 ## ✨ Features
 
 - **FastAPI** app scaffolded for growth with modular services, schemas, and API routers
-- **SQLAlchemy 2.0** models with **Alembic** migrations
+- **Async SQLAlchemy 2.0** (`sqlalchemy.asyncio`) with **Alembic** migrations
 - **JWT authentication** with refresh token rotation and reuse detection
 - **Rate limiting** on auth endpoints with Redis-backed storage (scales across instances)
 - **Items CRUD** with ownership enforcement and pagination
 - **Health check** endpoint with database connectivity status
+- **Request timing middleware** via `X-Process-Time-Ms` response header
 - **CORS** support configurable via environment
 - **Timestamps** on core models (`created_at`, `updated_at`)
 - **async/await** endpoints for high concurrency
@@ -69,8 +70,8 @@
 
 - **Active development**: This is a starter template meant to be customized.
 - **Production readiness**: Not production hardened out of the box (review security, config, and scaling needs).
-- **Database**: Models are stable; generate Alembic migrations after changes.
-- **Caching/rate limiting**: Redis-backed by default; see configuration below.
+- **Database**: Models are stable; DB access is async and migrations stay managed via Alembic.
+- **Rate limiting**: Redis-backed by default; see configuration below.
 
 ## 🧭 Project Structure
 
@@ -197,6 +198,8 @@ The API will be available at:
 - **Interactive docs**: http://localhost:8000/docs
 - **Alternative docs**: http://localhost:8000/redoc
 - **Health check**: http://localhost:8000/health (includes database status)
+
+Every response includes `X-Process-Time-Ms` from middleware for basic request timing visibility.
 
 ## 🔧 Development Workflow
 
