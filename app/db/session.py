@@ -12,6 +12,7 @@ def to_async_database_uri(uri: str) -> str:
         return uri.replace("postgresql://", "postgresql+asyncpg://", 1)
     return uri
 
+
 engine = create_async_engine(to_async_database_uri(settings.SQLALCHEMY_DATABASE_URI))
 
 SessionLocal = async_sessionmaker(
