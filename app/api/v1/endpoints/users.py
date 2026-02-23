@@ -42,9 +42,7 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> None:
-    changed = await change_user_password(
-        db, current_user, data.current_password, data.new_password
-    )
+    changed = await change_user_password(db, current_user, data.current_password, data.new_password)
     if not changed:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
