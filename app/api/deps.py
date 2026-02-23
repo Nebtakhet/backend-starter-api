@@ -1,11 +1,11 @@
 # Shared FastAPI dependencies for database sessions and auth.
 
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.security import ALGORITHM
@@ -14,7 +14,7 @@ from app.schemas.auth import TokenPayload
 from app.services.user_service import get_user_by_id
 
 
-def get_db() -> Generator[Session, None, None]:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     # Provide a database session per request.
     #
     # The session is automatically closed after the request.
@@ -24,17 +24,17 @@ def get_db() -> Generator[Session, None, None]:
     try:
         yield db
     except Exception:
-        db.rollback()
+        await db.rollback()
         raise
     finally:
-        db.close()
+        await db.close()
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
 
-def get_current_user(
-    db: Session = Depends(get_db),
+async def get_current_user(
+    db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme),
 ):
     # Decode the JWT and load the current user or fail with 401.
@@ -62,7 +62,7 @@ def get_current_user(
         token_data = TokenPayload(sub=subject)
     except JWTError:
         raise credentials_exception
-    user = get_user_by_id(db, int(token_data.sub))
+    user = await get_user_by_id(db, int(token_data.sub))
     if user is None:
         raise credentials_exception
     return user

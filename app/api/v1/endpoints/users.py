@@ -1,7 +1,7 @@
 # User registration and profile endpoints.
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
 from app.db.models import User
@@ -17,18 +17,18 @@ router = APIRouter()
 
 
 @router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def register_user(data: UserCreate, db: Session = Depends(get_db)) -> User:
-    if get_user_by_email(db, data.email):
+async def register_user(data: UserCreate, db: AsyncSession = Depends(get_db)) -> User:
+    if await get_user_by_email(db, data.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-    return create_user(db, data)
+    return await create_user(db, data)
 
 
 @router.get("/", response_model=list[UserOut])
-def read_users(db: Session = Depends(get_db)) -> list[User]:
-    return list_users(db)
+async def read_users(db: AsyncSession = Depends(get_db)) -> list[User]:
+    return await list_users(db)
 
 
 @router.get("/me", response_model=UserOut)
@@ -37,12 +37,14 @@ def read_me(current_user: User = Depends(get_current_user)) -> User:
 
 
 @router.post("/me/password", status_code=status.HTTP_204_NO_CONTENT)
-def change_password(
+async def change_password(
     data: UserPasswordChange,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> None:
-    changed = change_user_password(db, current_user, data.current_password, data.new_password)
+    changed = await change_user_password(
+        db, current_user, data.current_password, data.new_password
+    )
     if not changed:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

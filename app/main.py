@@ -2,6 +2,7 @@
 
 from collections.abc import Sequence
 from contextlib import asynccontextmanager
+from time import perf_counter
 
 from fastapi.encoders import jsonable_encoder
 from fastapi import FastAPI, HTTPException, Request
@@ -27,7 +28,8 @@ configure_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure tables exist on startup for local/dev usage.
-    Base.metadata.create_all(bind=engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     yield
 
 
@@ -44,6 +46,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_timing_header(request: Request, call_next):
+    start = perf_counter()
+    response = await call_next(request)
+    duration_ms = (perf_counter() - start) * 1000
+    response.headers["X-Process-Time-Ms"] = f"{duration_ms:.2f}"
+    return response
 
 
 def error_payload(detail: str, code: str, errors: Sequence[object] | None = None) -> dict:
@@ -102,12 +113,9 @@ async def health_check() -> dict:
     health_status = {"status": "ok", "database": "unknown"}
 
     try:
-        db = SessionLocal()
-        try:
-            db.execute(text("SELECT 1"))
+        async with SessionLocal() as db:
+            await db.execute(text("SELECT 1"))
             health_status["database"] = "connected"
-        finally:
-            db.close()
     except Exception:
         health_status["status"] = "degraded"
         health_status["database"] = "disconnected"

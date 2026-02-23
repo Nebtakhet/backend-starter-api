@@ -1,15 +1,22 @@
 # Database engine and session factory configuration.
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
 
-engine = create_engine(
-    settings.SQLALCHEMY_DATABASE_URI,
-    connect_args={"check_same_thread": False}
-    if settings.SQLALCHEMY_DATABASE_URI.startswith("sqlite")
-    else {},
-)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+def to_async_database_uri(uri: str) -> str:
+    if uri.startswith("sqlite://") and not uri.startswith("sqlite+aiosqlite://"):
+        return uri.replace("sqlite://", "sqlite+aiosqlite://", 1)
+    if uri.startswith("postgresql://") and "+" not in uri.split("://", 1)[0]:
+        return uri.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return uri
+
+engine = create_async_engine(to_async_database_uri(settings.SQLALCHEMY_DATABASE_URI))
+
+SessionLocal = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    autocommit=False,
+    autoflush=False,
+)
