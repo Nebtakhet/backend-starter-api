@@ -2,7 +2,9 @@
 
 from collections.abc import Sequence
 from contextlib import asynccontextmanager
+import logging
 from time import perf_counter
+from uuid import uuid4
 
 from fastapi.encoders import jsonable_encoder
 from fastapi import FastAPI, HTTPException, Request
@@ -17,12 +19,13 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.api.v1.api import api_router
 from app.core.config import settings
-from app.core.logging import configure_logging
+from app.core.logging import configure_logging, reset_request_id, set_request_id
 from app.core.rate_limit import limiter
 from app.db.base import Base
 from app.db.session import engine
 
 configure_logging()
+logger = logging.getLogger("app.request")
 
 
 @asynccontextmanager
@@ -50,10 +53,37 @@ app.add_middleware(
 
 @app.middleware("http")
 async def add_timing_header(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or uuid4().hex
+    token = set_request_id(request_id)
     start = perf_counter()
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception:
+        duration_ms = (perf_counter() - start) * 1000
+        logger.exception(
+            "request.failed",
+            extra={
+                "method": request.method,
+                "path": request.url.path,
+                "duration_ms": round(duration_ms, 2),
+            },
+        )
+        reset_request_id(token)
+        raise
+
     duration_ms = (perf_counter() - start) * 1000
     response.headers["X-Process-Time-Ms"] = f"{duration_ms:.2f}"
+    response.headers["X-Request-ID"] = request_id
+    logger.info(
+        "request.completed",
+        extra={
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": response.status_code,
+            "duration_ms": round(duration_ms, 2),
+        },
+    )
+    reset_request_id(token)
     return response
 
 
