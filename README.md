@@ -56,6 +56,8 @@
 - **Items CRUD** with ownership enforcement and pagination
 - **Health check** endpoint with database connectivity status
 - **Request timing middleware** via `X-Process-Time-Ms` response header
+- **Request correlation IDs** via `X-Request-ID` header (pass-through or auto-generated)
+- **Structured JSON logging** with request metadata (method, path, status, duration)
 - **CORS** support configurable via environment
 - **Timestamps** on core models (`created_at`, `updated_at`)
 - **async/await** endpoints for high concurrency
@@ -200,6 +202,16 @@ The API will be available at:
 - **Health check**: http://localhost:8000/health (includes database status)
 
 Every response includes `X-Process-Time-Ms` from middleware for basic request timing visibility.
+Every response also includes `X-Request-ID` for end-to-end request tracing.
+
+Trace a request with your own ID:
+```bash
+curl -i -H "X-Request-ID: demo-trace-123" http://localhost:8000/health
+```
+
+You should see both headers in the response:
+- `X-Process-Time-Ms`
+- `X-Request-ID`
 
 ## 🔧 Development Workflow
 
@@ -379,6 +391,21 @@ Error codes:
 - `db_integrity_error` - Database constraint violation
 - `db_error` - General database error
 
+### Observability
+
+The app logs requests in structured JSON format. Each log line includes:
+- `timestamp`
+- `level`
+- `logger`
+- `message`
+- `request_id`
+- `method`
+- `path`
+- `status_code`
+- `duration_ms`
+
+This makes it easy to filter logs by `request_id` and trace a request across services.
+
 ## 🏗️ Design & Architecture
 
 ### JWT + Refresh Token Strategy
@@ -399,7 +426,8 @@ This app uses **JWT access tokens** (short-lived) and **refresh tokens** (long-l
 Items belong to users. The API enforces ownership at the service layer:
 
 ```python
-db.query(Item).filter(Item.owner_id == current_user.id).all()
+result = await db.execute(select(Item).where(Item.owner_id == current_user.id))
+items = result.scalars().all()
 ```
 
 This prevents users from accessing/modifying other users' items—a fundamental multi-tenant security pattern. Without it, any authenticated user could modify anyone's data.
