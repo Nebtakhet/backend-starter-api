@@ -40,3 +40,19 @@ def test_request_id_passthrough_from_header():
     response = client.get("/health", headers={"X-Request-ID": expected_request_id})
     assert response.status_code == 200
     assert response.headers.get("x-request-id") == expected_request_id
+
+
+def test_metrics_endpoint_available():
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert "text/plain" in response.headers.get("content-type", "")
+
+
+def test_metrics_payload_contains_http_metrics():
+    client.get("/health")
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    payload = response.text
+    assert "http_requests_total" in payload
+    assert "http_request_duration_seconds" in payload
+    assert "http_requests_in_progress" in payload
