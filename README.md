@@ -323,6 +323,20 @@ Step 3: Open docs
 
 Redis is included in the compose stack for caching and rate limiting.
 
+### Optional: Run Prometheus for Metrics
+
+Start the stack with the monitoring profile:
+
+```bash
+docker compose --profile monitoring up --build
+```
+
+Then open:
+- API metrics endpoint: http://localhost:8000/metrics
+- Prometheus UI: http://localhost:9090
+
+Prometheus uses [prometheus.yml](prometheus.yml), mounted as a read-only volume in `docker-compose.yml`, and scrapes `api:8000/metrics` every 15 seconds.
+
 ### Full Compose Run
 
 Build and run with Docker Compose:
