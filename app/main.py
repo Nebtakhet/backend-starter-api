@@ -10,7 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -20,6 +20,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.logging import configure_logging, reset_request_id, set_request_id
+from app.core.metrics import IN_PROGRESS, metrics_payload, record_request
 from app.core.rate_limit import limiter
 from app.db.base import Base
 from app.db.session import engine
@@ -56,10 +57,20 @@ async def add_timing_header(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID") or uuid4().hex
     token = set_request_id(request_id)
     start = perf_counter()
+    IN_PROGRESS.inc()
+    route_path = request.url.path
+    status_code = 500
     try:
         response = await call_next(request)
+        status_code = response.status_code
     except Exception:
         duration_ms = (perf_counter() - start) * 1000
+        record_request(
+            method=request.method,
+            path=route_path,
+            status_code=status_code,
+            duration_seconds=duration_ms / 1000,
+        )
         logger.exception(
             "request.failed",
             extra={
@@ -69,9 +80,19 @@ async def add_timing_header(request: Request, call_next):
             },
         )
         reset_request_id(token)
+        IN_PROGRESS.dec()
         raise
 
     duration_ms = (perf_counter() - start) * 1000
+    route = request.scope.get("route")
+    if route is not None and hasattr(route, "path"):
+        route_path = route.path
+    record_request(
+        method=request.method,
+        path=route_path,
+        status_code=status_code,
+        duration_seconds=duration_ms / 1000,
+    )
     response.headers["X-Process-Time-Ms"] = f"{duration_ms:.2f}"
     response.headers["X-Request-ID"] = request_id
     logger.info(
@@ -84,6 +105,7 @@ async def add_timing_header(request: Request, call_next):
         },
     )
     reset_request_id(token)
+    IN_PROGRESS.dec()
     return response
 
 
@@ -133,6 +155,12 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
 
 
 app.include_router(api_router, prefix="/api/v1")
+
+
+@app.get("/metrics")
+async def metrics() -> Response:
+    payload, content_type = metrics_payload()
+    return Response(content=payload, media_type=content_type)
 
 
 @app.get("/health")
