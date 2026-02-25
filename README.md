@@ -58,6 +58,7 @@
 - **Request timing middleware** via `X-Process-Time-Ms` response header
 - **Request correlation IDs** via `X-Request-ID` header (pass-through or auto-generated)
 - **Structured JSON logging** with request metadata (method, path, status, duration)
+- **Prometheus metrics endpoint** at `GET /metrics`
 - **CORS** support configurable via environment
 - **Timestamps** on core models (`created_at`, `updated_at`)
 - **async/await** endpoints for high concurrency
@@ -200,6 +201,7 @@ The API will be available at:
 - **Interactive docs**: http://localhost:8000/docs
 - **Alternative docs**: http://localhost:8000/redoc
 - **Health check**: http://localhost:8000/health (includes database status)
+- **Metrics**: http://localhost:8000/metrics
 
 Every response includes `X-Process-Time-Ms` from middleware for basic request timing visibility.
 Every response also includes `X-Request-ID` for end-to-end request tracing.
@@ -405,6 +407,20 @@ The app logs requests in structured JSON format. Each log line includes:
 - `duration_ms`
 
 This makes it easy to filter logs by `request_id` and trace a request across services.
+
+### Metrics
+
+Prometheus-compatible metrics are exposed at `GET /metrics`.
+
+Current HTTP metrics include:
+- `http_requests_total` (counter by method/path/status_code)
+- `http_request_duration_seconds` (latency histogram by method/path/status_code)
+- `http_requests_in_progress` (in-flight gauge)
+
+Quick check:
+```bash
+curl -s http://localhost:8000/metrics | grep -E "http_requests_total|http_request_duration_seconds|http_requests_in_progress"
+```
 
 ## 🏗️ Design & Architecture
 
