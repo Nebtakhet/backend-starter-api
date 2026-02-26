@@ -32,9 +32,11 @@ logger = logging.getLogger("app.request")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure tables exist on startup for local/dev usage.
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    if settings.AUTO_CREATE_SCHEMA:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     yield
+    await engine.dispose()
 
 
 app = FastAPI(title="Backend Starter API", lifespan=lifespan)
@@ -163,19 +165,40 @@ async def metrics() -> Response:
     return Response(content=payload, media_type=content_type)
 
 
-@app.get("/health")
-async def health_check() -> dict:
-    # Health check endpoint with database connectivity verification.
+async def _database_connected() -> bool:
     from app.db.session import SessionLocal
-
-    health_status = {"status": "ok", "database": "unknown"}
 
     try:
         async with SessionLocal() as db:
             await db.execute(text("SELECT 1"))
-            health_status["database"] = "connected"
+        return True
     except Exception:
-        health_status["status"] = "degraded"
-        health_status["database"] = "disconnected"
+        return False
 
-    return health_status
+
+@app.get("/health/live")
+async def health_live() -> dict:
+    return {"status": "ok"}
+
+
+@app.get("/health/ready")
+async def health_ready() -> Response:
+    database_ok = await _database_connected()
+    payload = {
+        "status": "ok" if database_ok else "degraded",
+        "database": "connected" if database_ok else "disconnected",
+    }
+    status_code = 200 if database_ok else 503
+    return JSONResponse(status_code=status_code, content=payload)
+
+
+@app.get("/health")
+async def health_check() -> dict:
+    # Backward-compatible health endpoint.
+    database_ok = await _database_connected()
+    return {
+        "status": "ok" if database_ok else "degraded",
+        "database": "connected" if database_ok else "disconnected",
+        "live": "ok",
+        "ready": "ok" if database_ok else "degraded",
+    }
