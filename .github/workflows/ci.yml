@@ -34,5 +34,15 @@ jobs:
       - name: Typecheck
         run: mypy app tests
 
+      - name: Migration drift check
+        env:
+          SECRET_KEY: test-secret-key-32-chars-min-000000
+          REFRESH_TOKEN_SECRET: test-refresh-secret-32-chars-0000
+          SQLALCHEMY_DATABASE_URI: sqlite:///./ci.db
+          AUTO_CREATE_SCHEMA: "false"
+        run: |
+          alembic upgrade head
+          alembic check
+
       - name: Tests
         run: pytest
