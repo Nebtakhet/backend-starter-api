@@ -200,7 +200,9 @@ uvicorn app.main:app --reload
 The API will be available at:
 - **Interactive docs**: http://localhost:8000/docs
 - **Alternative docs**: http://localhost:8000/redoc
-- **Health check**: http://localhost:8000/health (includes database status)
+- **Health (legacy)**: http://localhost:8000/health
+- **Liveness**: http://localhost:8000/health/live
+- **Readiness**: http://localhost:8000/health/ready
 - **Metrics**: http://localhost:8000/metrics
 
 Every response includes `X-Process-Time-Ms` from middleware for basic request timing visibility.
@@ -214,6 +216,29 @@ curl -i -H "X-Request-ID: demo-trace-123" http://localhost:8000/health
 You should see both headers in the response:
 - `X-Process-Time-Ms`
 - `X-Request-ID`
+
+Health endpoint behavior:
+- `/health/live` returns `200` when the app process is up
+- `/health/ready` returns `200` when dependencies (database) are reachable, otherwise `503`
+- `/health` remains as a backward-compatible summary endpoint
+
+Minimal Kubernetes probe example:
+
+```yaml
+livenessProbe:
+	httpGet:
+		path: /health/live
+		port: 8000
+	initialDelaySeconds: 10
+	periodSeconds: 10
+
+readinessProbe:
+	httpGet:
+		path: /health/ready
+		port: 8000
+	initialDelaySeconds: 5
+	periodSeconds: 10
+```
 
 ## 🔧 Development Workflow
 
@@ -230,6 +255,10 @@ Apply pending migrations:
 ```bash
 alembic upgrade head
 ```
+
+Production recommendation:
+- Set `AUTO_CREATE_SCHEMA=false`
+- Run migrations explicitly during deployment (`alembic upgrade head`)
 
 ## 🧪 Testing
 
@@ -300,6 +329,7 @@ pre-commit run --all-files
 ```
 
 The CI pipeline automatically runs all these checks (lint, format, typecheck, security audit, and tests) on every push and pull request.
+It also runs `alembic check` to catch migration drift before merge.
 
 ## 🐳 Docker
 
