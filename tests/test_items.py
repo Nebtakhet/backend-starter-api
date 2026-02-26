@@ -34,6 +34,22 @@ def test_health_check():
     assert data["status"] == "ok"
     assert "database" in data
     assert data["database"] in ["connected", "disconnected"]
+    assert data["live"] == "ok"
+    assert data["ready"] in ["ok", "degraded"]
+
+
+def test_health_live():
+    response = client.get("/health/live")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_health_ready():
+    response = client.get("/health/ready")
+    assert response.status_code in [200, 503]
+    data = response.json()
+    assert data["status"] in ["ok", "degraded"]
+    assert data["database"] in ["connected", "disconnected"]
 
 
 def test_item_crud_and_ownership():
