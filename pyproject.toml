@@ -9,6 +9,7 @@ keywords = ["fastapi", "api", "jwt", "auth", "starter-template", "sqlalchemy"]
 dependencies = [
     "fastapi>=0.111.0",
     "uvicorn[standard]>=0.30.0",
+    "alembic>=1.13.0",
     "prometheus-client>=0.20.0",
     "sqlalchemy>=2.0.30",
     "aiosqlite>=0.20.0",

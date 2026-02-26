@@ -256,6 +256,18 @@ Apply pending migrations:
 alembic upgrade head
 ```
 
+Check for migration drift (same check CI runs):
+
+```bash
+alembic check
+```
+
+If you see `alembic: command not found`, ensure dependencies are installed in your active venv:
+
+```bash
+pip install -e ".[dev]"
+```
+
 Production recommendation:
 - Set `AUTO_CREATE_SCHEMA=false`
 - Run migrations explicitly during deployment (`alembic upgrade head`)
