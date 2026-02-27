@@ -177,6 +177,18 @@ Database examples:
 - SQLite: `sqlite:///./app.db`
 - PostgreSQL: `postgresql://user:password@localhost:5432/dbname`
 
+Local vs Docker URI quick reference:
+
+| Context | Example `SQLALCHEMY_DATABASE_URI` |
+|---|---|
+| Run API on host machine, DB in Docker | `postgresql://postgres:postgres@localhost:5433/app` |
+| Run API inside Docker Compose (`api` service) | `postgresql://postgres:postgres@db:5432/app` |
+
+Tip:
+- Use a standard `postgresql://` URL for `SQLALCHEMY_DATABASE_URI`.
+- The app converts it to `postgresql+asyncpg://` at runtime for async DB access.
+- This keeps Alembic migration commands compatible.
+
 ### Step 5: Initialize the database
 
 ```bash
@@ -552,7 +564,7 @@ The following environment variables must be set in your `.env` file:
 - `ACCESS_TOKEN_EXPIRE_MINUTES` - Access token lifetime (default: `60`)
 - `AUTH_LOGIN_RATE_LIMIT` - Rate limit for login endpoint (default: `5/minute`)
 - `AUTH_REFRESH_RATE_LIMIT` - Rate limit for refresh endpoint (default: `10/minute`)
-- `SQLALCHEMY_DATABASE_URI` - Database connection string
+- `SQLALCHEMY_DATABASE_URI` - Database connection string (recommended format: `postgresql://...`)
 
 **Optional:**
 - `REFRESH_TOKEN_EXPIRE_DAYS` - Refresh token lifetime (default: `30`)
