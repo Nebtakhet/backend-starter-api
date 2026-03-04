@@ -63,7 +63,7 @@
 - **Timestamps** on core models (`created_at`, `updated_at`)
 - **async/await** endpoints for high concurrency
 - **Type-safe** codebase with mypy validation
-- Comprehensive **test suite** (27 tests with 95.5% code coverage) using pytest and pytest-cov
+- Comprehensive **test suite** (57+ tests) with an enforced coverage gate
 - **Code coverage measurement** with detailed reports (HTML, terminal, missing lines)
 - **CI pipeline** with GitHub Actions (lint, format, typecheck, security audit, tests)
 - **Pre-commit hooks** for local quality enforcement
@@ -80,22 +80,30 @@
 
 ```text
 backend-starter-api/
+├── Makefile                 # Common development, quality, migration, and CI tasks
+├── README.md                # Project documentation
+├── pyproject.toml           # Dependencies and tool configuration
+├── alembic.ini              # Alembic configuration
+├── docker-compose.yml       # Docker services (API, Postgres, Redis, optional Prometheus)
+├── Dockerfile               # API container image
+├── prometheus.yml           # Prometheus scrape configuration
+├── .env.example             # Example environment variables
+├── .github/workflows/       # CI pipeline definitions
+│   └── ci.yml
+├── alembic/                 # Database migrations
+│   ├── env.py
+│   └── versions/
 ├── app/
 │   ├── main.py              # FastAPI app, middleware, exception handlers
-│   ├── api/                 # API routes (v1)
+│   ├── api/
 │   │   ├── deps.py          # Shared dependencies (get_db, get_current_user)
-│   │   └── v1/endpoints/    # Auth, users, items endpoints
-│   ├── core/                # Config, security, logging, rate limiting
-│   ├── db/                  # Database session, models, base
-│   ├── schemas/             # Pydantic schemas for validation
-│   ├── services/            # Business logic layer
-│   └── utils/               # Utilities
-├── tests/                   # Test suite
-├── alembic/                 # Database migrations
-├── .github/workflows/       # CI/CD pipelines
-├── pyproject.toml           # Project metadata and dependencies
-├── docker-compose.yml       # Docker orchestration
-└── Dockerfile               # Container image definition
+│   │   └── v1/endpoints/    # auth.py, users.py, items.py
+│   ├── core/                # config.py, security.py, logging.py, metrics.py, rate_limit.py
+│   ├── db/                  # session.py, models.py, base.py
+│   ├── schemas/             # Pydantic request/response schemas
+│   ├── services/            # Business logic (auth_service, user_service)
+│   └── utils/               # Utility helpers
+└── tests/                   # Integration and unit tests
 ```
 
 ## 📋 Prerequisites
@@ -106,7 +114,7 @@ Before you begin, ensure you have:
 - **pip** and **venv** (usually included with Python)
 - **Git** for version control
 
-### Optional
+### Optional Tools
 - **PostgreSQL** (for production-like local development)
 - **Docker** and **Docker Compose** (for containerized deployment)
 - **Redis** (for caching and rate limit storage; optional for local dev)
@@ -139,6 +147,12 @@ python -m venv .venv
 ```bash
 pip install --upgrade pip
 pip install -e ".[dev]"
+```
+
+Optional: list all available project automation commands.
+
+```bash
+make help
 ```
 
 ### Step 4: Configure environment variables
@@ -217,8 +231,9 @@ The API will be available at:
 - **Readiness**: http://localhost:8000/health/ready
 - **Metrics**: http://localhost:8000/metrics
 
-Every response includes `X-Process-Time-Ms` from middleware for basic request timing visibility.
-Every response also includes `X-Request-ID` for end-to-end request tracing.
+Every response includes:
+- `X-Process-Time-Ms` for request timing visibility
+- `X-Request-ID` for end-to-end request tracing
 
 Trace a request with your own ID:
 ```bash
@@ -238,43 +253,64 @@ Minimal Kubernetes probe example:
 
 ```yaml
 livenessProbe:
-	httpGet:
-		path: /health/live
-		port: 8000
-	initialDelaySeconds: 10
-	periodSeconds: 10
+  httpGet:
+    path: /health/live
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 10
 
 readinessProbe:
-	httpGet:
-		path: /health/ready
-		port: 8000
-	initialDelaySeconds: 5
-	periodSeconds: 10
+  httpGet:
+    path: /health/ready
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 10
 ```
 
 ## 🔧 Development Workflow
 
-### Database Migrations
+### Makefile shortcuts (recommended)
 
-Create a new migration after modifying models:
+This project includes a Makefile to standardize common tasks.
+
+Start by listing all available targets:
 
 ```bash
-alembic revision --autogenerate -m "description of changes"
+make help
 ```
 
-Apply pending migrations:
+```bash
+make install
+make run
+make test-cov
+make quality
+make ci
+```
+
+Notes:
+- `make ci` mirrors local quality checks (`ruff`, `mypy`, `pip-audit`, Alembic drift check, coverage test run)
+- Override coverage gate if needed: `make test-cov COV_FAIL_UNDER=90`
+- Create migration with message: `make migrate-new MSG="add user profile fields"`
+
+### Database Migrations
+
+Use either Makefile targets or direct Alembic commands.
+
+```bash
+make migrate
+make migrate-check
+make migrate-new MSG="description of changes"
+```
+
+Equivalent direct commands:
 
 ```bash
 alembic upgrade head
-```
-
-Check for migration drift (same check CI runs):
-
-```bash
 alembic check
+alembic revision --autogenerate -m "description of changes"
 ```
 
-If you see `alembic: command not found`, ensure dependencies are installed in your active venv:
+If `alembic` is missing, install project dependencies in the active venv:
 
 ```bash
 pip install -e ".[dev]"
@@ -300,41 +336,50 @@ export REDIS_URL="memory://"
 ### Step 2: Run tests
 
 ```bash
+make test
+# or
 pytest
 ```
 
 ### Step 3: Code coverage
 
-Generate and view code coverage reports:
-
-**Terminal summary:**
 ```bash
-pytest tests/ --cov=app --cov-report=term-missing
+make test-cov COV_FAIL_UNDER=90
 ```
 
-**HTML report (interactive):**
+Alternative commands:
+
 ```bash
+pytest tests/ --cov=app --cov-report=term-missing
+pytest tests/ --cov=app --cov-fail-under=90
 pytest tests/ --cov=app --cov-report=html
-open htmlcov/index.html    # macOS
+```
+
+Open HTML report:
+
+```bash
+open htmlcov/index.html      # macOS
 xdg-open htmlcov/index.html  # Linux
 start htmlcov/index.html     # Windows
 ```
 
-**With coverage threshold (fail if < 80%):**
-```bash
-pytest tests/ --cov=app --cov-fail-under=80
-```
-
-Current coverage: **95.5%** across app/ (467 statements, 21 uncovered edge cases)
-
 ## ✅ Quality Checks
 
-**Lint, format, and coverage:**
+Recommended (via Makefile):
+
+```bash
+make quality
+make security
+make ci
+```
+
+Direct commands:
+
+**Lint + format:**
 ```bash
 ruff check .          # Check for issues
 ruff check . --fix    # Auto-fix issues
 ruff format .         # Format code
-pytest tests/ --cov=app --cov-report=term-missing  # Show coverage
 ```
 
 **Type checking:**
@@ -359,23 +404,28 @@ It also runs `alembic check` to catch migration drift before merge.
 
 ### Quick Start (Docker Compose)
 
-Step 1: Start the stack
+Start and stop:
 
 ```bash
 docker compose up --build
+docker compose down
 ```
 
-Step 2: Verify the API is healthy
+Equivalent Makefile targets:
+
+```bash
+make up
+make down
+```
+
+Verify:
 
 ```bash
 curl http://localhost:8000/health
 ```
 
-Step 3: Open docs
-
-- http://localhost:8000/docs
-
-Redis is included in the compose stack for caching and rate limiting.
+- Docs: http://localhost:8000/docs
+- Redis is included for rate limiting/caching
 
 ### Optional: Run Prometheus for Metrics
 
@@ -390,16 +440,6 @@ Then open:
 - Prometheus UI: http://localhost:9090
 
 Prometheus uses [prometheus.yml](prometheus.yml), mounted as a read-only volume in `docker-compose.yml`, and scrapes `api:8000/metrics` every 15 seconds.
-
-### Full Compose Run
-
-Build and run with Docker Compose:
-
-```bash
-docker compose up --build
-```
-
-The API will be available at http://localhost:8000
 
 ### Running Tests in Docker
 
@@ -456,10 +496,10 @@ All errors follow a consistent format:
 ```
 
 Error codes:
-- `validation_error` - Request validation failed
-- `auth_error` - Authentication/authorization failed
-- `db_integrity_error` - Database constraint violation
-- `db_error` - General database error
+- `validation_error`: Request validation failed
+- `auth_error`: Authentication/authorization failed
+- `db_integrity_error`: Database constraint violation
+- `db_error`: General database error
 
 ### Observability
 
@@ -494,16 +534,9 @@ curl -s http://localhost:8000/metrics | grep -E "http_requests_total|http_reques
 
 ### JWT + Refresh Token Strategy
 
-This app uses **JWT access tokens** (short-lived) and **refresh tokens** (long-lived) because:
-
-- **Stateless auth**: No server-side session storage needed. Access token is verified with just the secret key.
-- **Scalability**: Any server can validate the token without checking a session store; perfect for distributed systems.
-- **Short expiry**: Access tokens expire quickly (60 min default), limiting damage from token theft.
-- **Refresh rotation**: Refresh tokens are rotated on every refresh, and old ones are invalidated if reused (detects token theft).
-
-**Why refresh tokens are hashed in the database:**
-- If the DB is compromised, attackers can't directly use the leaked tokens (hashes are one-way).
-- When a refresh token is used, we compare the incoming token's hash to the stored hash; they match only if it's the legitimate token.
+- Access tokens are short-lived and stateless for scalable request auth.
+- Refresh tokens are long-lived, rotated on use, and reuse is treated as suspicious.
+- Refresh tokens are stored as hashes, so leaked DB records cannot be used as raw tokens.
 
 ### Ownership Enforcement
 
@@ -514,39 +547,21 @@ result = await db.execute(select(Item).where(Item.owner_id == current_user.id))
 items = result.scalars().all()
 ```
 
-This prevents users from accessing/modifying other users' items—a fundamental multi-tenant security pattern. Without it, any authenticated user could modify anyone's data.
+This enforces tenant isolation so authenticated users cannot access each other’s data.
 
 ### Service Layer vs API Layer
 
 - **API layer** (`app/api/`): Handles HTTP routing, request validation, and response serialization.
 - **Service layer** (`app/services/`): Contains business logic, DB queries, and invariant enforcement (e.g., ownership checks). Reusable.
 
-Separation of concerns makes the codebase testable and maintainable. If you add a CLI or gRPC endpoint later, reuse the service layer without duplicating logic.
+Separation of concerns keeps the code testable and reusable across HTTP/CLI/worker entry points.
 
-### Scaling Architecture
+### Scaling Notes
 
-This template is **stateless by design**, ready to scale:
-
-```
-┌─────────────────────────────────────┐
-│    Load Balancer (nginx, etc)       │
-├─────────────────────────────────────┤
-│ API Server 1 │ API Server 2 │ ... │  ← Stateless (no session affinity needed)
-├─────────────────────────────────────┤
-│           PostgreSQL Database       │  ← Persistent data (queries, auth)
-├─────────────────────────────────────┤
-│  Redis/Memcached (optional)         │  ← Cache layer for expensive queries
-│     Celery/RQ (optional)            │  ← Async job queue for long operations
-└─────────────────────────────────────┘
-```
-
-**Why this works:**
-- JWT tokens don't require session affinity; any server can validate them.
-- Database is the single source of truth.
-- Caching (Redis) speeds up frequent queries.
-- Job queues (Celery) handle async work (e.g., sending emails).
-
-To scale: add more API servers behind a load balancer, and upgrade the DB to a managed service (AWS RDS, Heroku Postgres, etc).
+- API layer is stateless (no sticky sessions required).
+- PostgreSQL is the source of truth.
+- Redis can be used for shared rate limits/caching.
+- Horizontal scaling is straightforward behind a load balancer.
 
 ## ⚙️ Configuration
 
