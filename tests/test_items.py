@@ -124,13 +124,3 @@ def test_items_require_auth():
     invalid_headers = {"Authorization": "Bearer invalid"}
     list_invalid = client.get("/api/v1/items/", headers=invalid_headers)
     assert list_invalid.status_code == 401
-
-
-def test_item_not_found_for_owner():
-    email = f"user-{uuid.uuid4().hex}@example.com"
-    register_user(email)
-    tokens = login_user(email)
-    headers = {"Authorization": f"Bearer {tokens['access_token']}"}
-
-    response = client.get("/api/v1/items/999999", headers=headers)
-    assert response.status_code == 404

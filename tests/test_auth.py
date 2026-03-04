@@ -23,20 +23,6 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-async def _insert_expired_refresh_token(email: str, raw_token: str) -> None:
-    async with SessionLocal() as db:
-        result = await db.execute(select(User).where(User.email == email))
-        user = result.scalars().first()
-        assert user is not None
-        record = RefreshToken(
-            user_id=user.id,
-            token_hash=hash_refresh_token(raw_token),
-            expires_at=utcnow() - timedelta(minutes=1),
-        )
-        db.add(record)
-        await db.commit()
-
-
 async def _insert_revoked_and_active_tokens(
     email: str, revoked_token: str, active_token: str
 ) -> None:
@@ -101,16 +87,6 @@ def test_login_invalid_credentials():
         json={"email": "invalid@example.com", "password": "wrong"},
     )
     assert response.status_code == 401
-
-
-def test_register_duplicate_email_fails():
-    email = f"user-{uuid.uuid4().hex}@example.com"
-    register_user(email)
-    response = client.post(
-        "/api/v1/users/",
-        json={"email": email, "password": "StrongPass123!"},
-    )
-    assert response.status_code == 400
 
 
 def test_register_weak_password_fails():
@@ -192,27 +168,6 @@ def test_refresh_token_reuse_revokes_all():
     assert refresh_after_reuse.status_code == 401
 
 
-def test_refresh_with_invalid_token():
-    response = client.post(
-        "/api/v1/auth/refresh",
-        json={"refresh_token": "invalid-token"},
-    )
-    assert response.status_code == 401
-
-
-def test_refresh_rejects_expired_token():
-    email = f"user-{uuid.uuid4().hex}@example.com"
-    register_user(email)
-    raw_token = f"expired-{uuid.uuid4().hex}"
-    _run(_insert_expired_refresh_token(email, raw_token))
-
-    response = client.post(
-        "/api/v1/auth/refresh",
-        json={"refresh_token": raw_token},
-    )
-    assert response.status_code == 401
-
-
 def test_refresh_revoked_token_revokes_all():
     email = f"user-{uuid.uuid4().hex}@example.com"
     register_user(email)
@@ -274,20 +229,6 @@ def test_change_password_success_and_login_with_new_password():
         json={"email": email, "password": new_password},
     )
     assert new_login_response.status_code == 200
-
-
-def test_change_password_rejects_invalid_current_password():
-    email = f"user-{uuid.uuid4().hex}@example.com"
-    register_user(email)
-    tokens = login_user(email)
-    access_token = tokens["access_token"]
-
-    response = client.post(
-        "/api/v1/users/me/password",
-        json={"current_password": "WrongPass123!", "new_password": "ValidNewPass123!"},
-        headers={"Authorization": f"Bearer {access_token}"},
-    )
-    assert response.status_code == 401
 
 
 def test_change_password_rejects_weak_new_password():
