@@ -1,7 +1,7 @@
 [project]
 name = "backend-starter-api"
 version = "0.2.0"
-description = "Production-adjacent FastAPI starter with JWT auth, robust password policy, rate limiting, and 95%+ test coverage"
+description = "Production-adjacent FastAPI starter with JWT auth, robust password policy, rate limiting, and 90%+ test coverage"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
@@ -24,7 +24,6 @@ dependencies = [
     "psycopg2-binary>=2.9.9",
     "slowapi>=0.1.9",
     "redis>=5.0.0",
-    "fastapi-cache2>=0.2.1",
 ]
 
 [project.urls]
