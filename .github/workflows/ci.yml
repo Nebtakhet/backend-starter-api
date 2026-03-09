@@ -7,6 +7,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -14,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
 
       - name: Install dependencies
@@ -45,4 +49,4 @@ jobs:
           alembic check
 
       - name: Tests + Coverage gate
-        run: pytest tests/ --cov=app --cov-report=term-missing --cov-fail-under=78
+        run: pytest tests/ --cov=app --cov-report=term-missing --cov-fail-under=90
