@@ -34,6 +34,8 @@
 	·
 	<a href="#-local-setup-venv">Local Setup</a>
 	·
+	<a href="#-quickstart-makefile-first">Quickstart</a>
+	·
 	<a href="#-running-the-application">Running</a>
 	·
 	<a href="#-testing">Testing</a>
@@ -46,6 +48,20 @@
 	·
 	<a href="#-configuration">Configuration</a>
 </p>
+
+## ⚡ Quickstart (Makefile-first)
+
+```bash
+make help
+make install
+make run
+```
+
+Before opening a PR:
+
+```bash
+make ci
+```
 
 ## ✨ Features
 
