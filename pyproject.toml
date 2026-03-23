@@ -9,6 +9,7 @@ keywords = ["fastapi", "api", "jwt", "auth", "starter-template", "sqlalchemy"]
 dependencies = [
     "fastapi>=0.111.0",
     "uvicorn[standard]>=0.30.0",
+    "gunicorn>=22.0.0",
     "alembic>=1.13.0",
     "prometheus-client>=0.20.0",
     "sqlalchemy>=2.0.30",
@@ -18,6 +19,7 @@ dependencies = [
     "pydantic-settings>=2.3.0",
     "email-validator>=2.1.0",
     "python-jose>=3.3.0",
+    "pyasn1>=0.6.3",
     "passlib[bcrypt]>=1.7.4",
     "bcrypt<4.0",
     "python-multipart>=0.0.9",
