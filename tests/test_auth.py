@@ -102,6 +102,11 @@ def test_me_requires_auth():
     assert response.status_code == 401
 
 
+def test_users_list_requires_auth():
+    response = client.get("/api/v1/users/")
+    assert response.status_code == 401
+
+
 def test_register_login_and_access_me():
     email = f"user-{uuid.uuid4().hex}@example.com"
     register_user(email)
@@ -114,6 +119,20 @@ def test_register_login_and_access_me():
     )
     assert me_response.status_code == 200
     assert me_response.json()["email"] == email
+
+
+def test_users_list_with_auth():
+    email = f"list-users-{uuid.uuid4().hex}@example.com"
+    register_user(email)
+    tokens = login_user(email)
+    access_token = tokens["access_token"]
+
+    users_response = client.get(
+        "/api/v1/users/",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert users_response.status_code == 200
+    assert any(user["email"] == email for user in users_response.json())
 
 
 def test_refresh_flow_and_logout_revokes():

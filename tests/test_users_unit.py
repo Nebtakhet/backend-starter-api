@@ -30,7 +30,7 @@ def test_users_endpoint_functions_cover_register_list_and_password_change():
             )
             assert created.id is not None
 
-            users = await users_endpoint.read_users(db)
+            users = await users_endpoint.read_users(db, created)
             assert any(user.id == created.id for user in users)
 
             me = users_endpoint.read_me(created)
