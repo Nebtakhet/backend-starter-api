@@ -183,3 +183,25 @@ def test_rotate_refresh_token_expired_record_returns_none():
             assert token is None
 
     _run(_scenario())
+
+
+def test_rotate_refresh_token_rotates_and_revokes_old_token():
+    email = f"rotate-success-{uuid.uuid4().hex}@example.com"
+    created = _run(_create_user(email, "StrongPass123!"))
+    old_token = f"old-{uuid.uuid4().hex}"
+    _run(_insert_refresh_token(created.id, old_token, revoked=False))
+
+    async def _scenario():
+        async with SessionLocal() as db:
+            rotated = await rotate_refresh_token(db, old_token)
+            assert rotated is not None
+            assert rotated.refresh_token != old_token
+
+        records = await _list_user_tokens(created.id)
+        old_hash = hash_refresh_token(old_token)
+        new_hash = hash_refresh_token(rotated.refresh_token)
+        by_hash = {record.token_hash: record for record in records}
+        assert by_hash[old_hash].revoked is True
+        assert by_hash[new_hash].revoked is False
+
+    _run(_scenario())
