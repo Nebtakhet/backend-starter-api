@@ -33,6 +33,8 @@ class Settings(BaseSettings):
         if self.REFRESH_TOKEN_SECRET.lower() == "change-me":
             raise ValueError("REFRESH_TOKEN_SECRET must be set to a strong value")
         if self.ENVIRONMENT.lower() == "production":
+            if self.AUTO_CREATE_SCHEMA:
+                raise ValueError("AUTO_CREATE_SCHEMA must be false in production")
             if self.SQLALCHEMY_DATABASE_URI.startswith("sqlite"):
                 raise ValueError("SQLALCHEMY_DATABASE_URI must not use sqlite in production")
         return self
