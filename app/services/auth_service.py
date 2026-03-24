@@ -61,9 +61,7 @@ async def rotate_refresh_token(db: AsyncSession, raw_token: str) -> Token | None
     token_hash = hash_refresh_token(raw_token)
     async with db.begin():
         result = await db.execute(
-            select(RefreshToken)
-            .where(RefreshToken.token_hash == token_hash)
-            .with_for_update()
+            select(RefreshToken).where(RefreshToken.token_hash == token_hash).with_for_update()
         )
         record = result.scalars().first()
         if not record:
@@ -75,7 +73,9 @@ async def rotate_refresh_token(db: AsyncSession, raw_token: str) -> Token | None
         if record.revoked:
             # Defensive: a reused refresh token invalidates all sessions for the user.
             await db.execute(
-                update(RefreshToken).where(RefreshToken.user_id == record.user_id).values(revoked=True)
+                update(RefreshToken)
+                .where(RefreshToken.user_id == record.user_id)
+                .values(revoked=True)
             )
             return None
         if expires_at <= utcnow():
