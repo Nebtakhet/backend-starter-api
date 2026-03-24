@@ -196,6 +196,7 @@ def test_rotate_refresh_token_rotates_and_revokes_old_token():
             rotated = await rotate_refresh_token(db, old_token)
             assert rotated is not None
             assert rotated.refresh_token != old_token
+            assert rotated.refresh_token is not None
 
         records = await _list_user_tokens(created.id)
         old_hash = hash_refresh_token(old_token)
