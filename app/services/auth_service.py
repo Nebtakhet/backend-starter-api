@@ -34,7 +34,13 @@ async def create_user_token(db: AsyncSession, user: User) -> Token:
     return Token(access_token=access_token, refresh_token=refresh_token)
 
 
-async def store_refresh_token(db: AsyncSession, user_id: int, raw_token: str) -> RefreshToken:
+async def store_refresh_token(
+    db: AsyncSession,
+    user_id: int,
+    raw_token: str,
+    *,
+    commit: bool = True,
+) -> RefreshToken:
     expires_at = utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     token_hash = hash_refresh_token(raw_token)
     record = RefreshToken(
@@ -43,32 +49,43 @@ async def store_refresh_token(db: AsyncSession, user_id: int, raw_token: str) ->
         expires_at=expires_at,
     )
     db.add(record)
-    await db.commit()
-    await db.refresh(record)
+    if commit:
+        await db.commit()
+        await db.refresh(record)
+    else:
+        await db.flush()
     return record
 
 
 async def rotate_refresh_token(db: AsyncSession, raw_token: str) -> Token | None:
     token_hash = hash_refresh_token(raw_token)
-    result = await db.execute(select(RefreshToken).where(RefreshToken.token_hash == token_hash))
-    record = result.scalars().first()
-    if not record:
-        return None
-    expires_at = record.expires_at
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-    if record.revoked:
-        # Defensive: a reused refresh token invalidates all sessions for the user.
-        await revoke_all_refresh_tokens(db, record.user_id)
-        return None
-    if expires_at <= utcnow():
-        return None
-    record.revoked = True
-    access_token = create_access_token(subject=str(record.user_id))
-    new_refresh = create_refresh_token()
-    await store_refresh_token(db, record.user_id, new_refresh)
-    await db.commit()
-    return Token(access_token=access_token, refresh_token=new_refresh)
+    async with db.begin():
+        result = await db.execute(
+            select(RefreshToken)
+            .where(RefreshToken.token_hash == token_hash)
+            .with_for_update()
+        )
+        record = result.scalars().first()
+        if not record:
+            return None
+
+        expires_at = record.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if record.revoked:
+            # Defensive: a reused refresh token invalidates all sessions for the user.
+            await db.execute(
+                update(RefreshToken).where(RefreshToken.user_id == record.user_id).values(revoked=True)
+            )
+            return None
+        if expires_at <= utcnow():
+            return None
+
+        record.revoked = True
+        access_token = create_access_token(subject=str(record.user_id))
+        new_refresh = create_refresh_token()
+        await store_refresh_token(db, record.user_id, new_refresh, commit=False)
+        return Token(access_token=access_token, refresh_token=new_refresh)
 
 
 async def revoke_refresh_token(db: AsyncSession, raw_token: str) -> bool:
