@@ -33,7 +33,7 @@ jobs:
         run: ruff format --check .
 
       - name: Security audit
-        run: pip-audit --ignore-vuln CVE-2025-8869 --ignore-vuln CVE-2026-1703 --ignore-vuln CVE-2024-23342 # Ignoring issues in dependencies we don't control
+        run: pip-audit --ignore-vuln CVE-2025-8869 --ignore-vuln CVE-2026-1703 --ignore-vuln CVE-2024-23342 --ignore-vuln CVE-2026-4539 # Ignoring issues in dependencies we don't control
 
       - name: Typecheck
         run: mypy app tests

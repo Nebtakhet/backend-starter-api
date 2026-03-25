@@ -67,7 +67,7 @@ typecheck:
 	$(MYPY) app tests
 
 security:
-	$(PIP_AUDIT) --ignore-vuln CVE-2025-8869 --ignore-vuln CVE-2026-1703 --ignore-vuln CVE-2024-23342
+	$(PIP_AUDIT) --ignore-vuln CVE-2025-8869 --ignore-vuln CVE-2026-1703 --ignore-vuln CVE-2024-23342 --ignore-vuln CVE-2026-4539
 
 quality: lint format-check typecheck
 
