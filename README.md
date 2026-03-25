@@ -595,6 +595,8 @@ The following environment variables must be set in your `.env` file:
 - `ACCESS_TOKEN_EXPIRE_MINUTES` - Access token lifetime (default: `60`)
 - `AUTH_LOGIN_RATE_LIMIT` - Rate limit for login endpoint (default: `5/minute`)
 - `AUTH_REFRESH_RATE_LIMIT` - Rate limit for refresh endpoint (default: `10/minute`)
+- `RATE_LIMIT_TRUST_PROXY_HEADERS` - If `true`, allow `X-Forwarded-For` to influence limiter key only for trusted direct peers (default: `false`)
+- `RATE_LIMIT_TRUSTED_PROXY_IPS` - JSON array of trusted direct peer hosts/IPs (default: `[]`)
 - `SQLALCHEMY_DATABASE_URI` - Database connection string (recommended format: `postgresql://...`)
 
 **Optional:**
