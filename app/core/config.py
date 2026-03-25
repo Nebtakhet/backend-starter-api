@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     AUTH_LOGIN_RATE_LIMIT: str = "5/minute"
     AUTH_REFRESH_RATE_LIMIT: str = "10/minute"
+    RATE_LIMIT_TRUST_PROXY_HEADERS: bool = False
+    RATE_LIMIT_TRUSTED_PROXY_IPS: list[str] = []
     REDIS_URL: str = "redis://localhost:6379/0"
     CACHE_TTL_SECONDS: int = 30
     AUTO_CREATE_SCHEMA: bool = False
@@ -35,6 +37,10 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT.lower() == "production":
             if self.AUTO_CREATE_SCHEMA:
                 raise ValueError("AUTO_CREATE_SCHEMA must be false in production")
+            if self.RATE_LIMIT_TRUST_PROXY_HEADERS and not self.RATE_LIMIT_TRUSTED_PROXY_IPS:
+                raise ValueError(
+                    "RATE_LIMIT_TRUSTED_PROXY_IPS must be set when RATE_LIMIT_TRUST_PROXY_HEADERS=true in production"
+                )
             if self.SQLALCHEMY_DATABASE_URI.startswith("sqlite"):
                 raise ValueError("SQLALCHEMY_DATABASE_URI must not use sqlite in production")
         return self

@@ -1,8 +1,41 @@
 # Shared rate limiter instance for API routes.
 
+from ipaddress import ip_address
+
 from slowapi import Limiter
-from slowapi.util import get_remote_address
+from starlette.requests import Request
 
 from app.core.config import settings
 
-limiter = Limiter(key_func=get_remote_address, storage_uri=settings.REDIS_URL)
+
+def _parse_forwarded_for(header_value: str | None) -> str | None:
+    if not header_value:
+        return None
+    candidate = header_value.split(",", 1)[0].strip()
+    if not candidate:
+        return None
+    try:
+        ip_address(candidate)
+    except ValueError:
+        return None
+    return candidate
+
+
+def _trusted_proxy_hosts() -> set[str]:
+    return {host.strip() for host in settings.RATE_LIMIT_TRUSTED_PROXY_IPS if host.strip()}
+
+
+def get_rate_limit_key(request: Request) -> str:
+    remote_host = request.client.host if request.client else "unknown"
+    if not settings.RATE_LIMIT_TRUST_PROXY_HEADERS:
+        return remote_host
+
+    trusted = _trusted_proxy_hosts()
+    if remote_host not in trusted:
+        return remote_host
+
+    forwarded_host = _parse_forwarded_for(request.headers.get("X-Forwarded-For"))
+    return forwarded_host or remote_host
+
+
+limiter = Limiter(key_func=get_rate_limit_key, storage_uri=settings.REDIS_URL)
