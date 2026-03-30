@@ -485,7 +485,7 @@ docker compose run --rm --no-deps -e SQLALCHEMY_DATABASE_URI=sqlite:///./test.db
 
 **Users:**
 - `POST /api/v1/users` - Register a new user
-- `GET /api/v1/users` - List all users (authenticated)
+- `GET /api/v1/users` - List all users (admin only)
 - `GET /api/v1/users/me` - Get current user profile
 - `POST /api/v1/users/me/password` - Change current user's password
 

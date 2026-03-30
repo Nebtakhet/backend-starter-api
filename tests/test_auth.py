@@ -63,6 +63,15 @@ async def _get_user_by_email(email: str) -> User | None:
         return result.scalars().first()
 
 
+async def _set_user_admin(email: str, is_admin: bool) -> None:
+    async with SessionLocal() as db:
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalars().first()
+        assert user is not None
+        user.is_admin = is_admin
+        await db.commit()
+
+
 # Helpers for common auth flows.
 def register_user(email: str, password: str = "StrongPass123!") -> None:
     response = client.post(
@@ -124,6 +133,20 @@ def test_register_login_and_access_me():
 def test_users_list_with_auth():
     email = f"list-users-{uuid.uuid4().hex}@example.com"
     register_user(email)
+    tokens = login_user(email)
+    access_token = tokens["access_token"]
+
+    users_response = client.get(
+        "/api/v1/users/",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert users_response.status_code == 403
+
+
+def test_users_list_with_admin_auth():
+    email = f"admin-list-{uuid.uuid4().hex}@example.com"
+    register_user(email)
+    _run(_set_user_admin(email, True))
     tokens = login_user(email)
     access_token = tokens["access_token"]
 

@@ -30,6 +30,10 @@ def test_users_endpoint_functions_cover_register_list_and_password_change():
             )
             assert created.id is not None
 
+            created.is_admin = True
+            await db.commit()
+            await db.refresh(created)
+
             users = await users_endpoint.read_users(db, created)
             assert any(user.id == created.id for user in users)
 
@@ -48,6 +52,20 @@ def test_users_endpoint_functions_cover_register_list_and_password_change():
             refreshed = await get_user_by_id(db, created.id)
             assert refreshed is not None
             assert verify_password("NewStrongPass123!", refreshed.hashed_password)
+
+    _run(_scenario())
+
+
+def test_read_users_rejects_non_admin():
+    async def _scenario() -> None:
+        async with SessionLocal() as db:
+            created = await users_endpoint.register_user(
+                UserCreate(email=_email("users-non-admin"), password="StrongPass123!"),
+                db,
+            )
+            with pytest.raises(HTTPException) as exc:
+                await users_endpoint.read_users(db, created)
+            assert exc.value.status_code == status.HTTP_403_FORBIDDEN
 
     _run(_scenario())
 
