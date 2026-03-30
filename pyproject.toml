@@ -1,6 +1,6 @@
 [project]
 name = "backend-starter-api"
-version = "0.2.0"
+version = "0.3.0"
 description = "Production-adjacent FastAPI starter with JWT auth, robust password policy, rate limiting, and 90%+ test coverage"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,6 +19,7 @@ dependencies = [
     "pydantic-settings>=2.3.0",
     "email-validator>=2.1.0",
     "python-jose>=3.3.0",
+    "ecdsa>=0.19.2",
     "pyasn1>=0.6.3",
     "passlib[bcrypt]>=1.7.4",
     "bcrypt<4.0",
