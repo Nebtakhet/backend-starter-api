@@ -7,20 +7,20 @@ import uuid
 from sqlalchemy import select
 
 from app.core.security import get_password_hash, hash_refresh_token
+import app.db.base  # noqa: F401
 from app.db.models import RefreshToken, User
 from app.db.session import SessionLocal
-from app.services.auth_service import (
-    authenticate_user,
-    create_user_token,
-    revoke_all_refresh_tokens,
-    revoke_refresh_token,
-    rotate_refresh_token,
-)
 from app.utils.time import utcnow
 
 
 def _run(coro):
     return asyncio.run(coro)
+
+
+def _auth_service_module():
+    import app.services.auth_service as module
+
+    return module
 
 
 async def _create_user(email: str, password: str = "StrongPass123!") -> User:
@@ -65,7 +65,9 @@ async def _get_user_by_email(email: str) -> User | None:
 def test_authenticate_user_returns_none_for_missing_user():
     async def _scenario():
         async with SessionLocal() as db:
-            user = await authenticate_user(db, "missing@example.com", "StrongPass123!")
+            user = await _auth_service_module().authenticate_user(
+                db, "missing@example.com", "StrongPass123!"
+            )
             assert user is None
 
     _run(_scenario())
@@ -77,7 +79,7 @@ def test_authenticate_user_returns_none_for_invalid_password():
 
     async def _scenario():
         async with SessionLocal() as db:
-            user = await authenticate_user(db, email, "WrongPass123!")
+            user = await _auth_service_module().authenticate_user(db, email, "WrongPass123!")
             assert user is None
 
     _run(_scenario())
@@ -89,7 +91,7 @@ def test_authenticate_user_returns_user_for_valid_credentials():
 
     async def _scenario():
         async with SessionLocal() as db:
-            user = await authenticate_user(db, email, "StrongPass123!")
+            user = await _auth_service_module().authenticate_user(db, email, "StrongPass123!")
             assert user is not None
             assert user.id == created.id
 
@@ -104,7 +106,7 @@ def test_create_user_token_persists_refresh_token():
         async with SessionLocal() as db:
             user = await _get_user_by_email(email)
             assert user is not None
-            token = await create_user_token(db, user)
+            token = await _auth_service_module().create_user_token(db, user)
             assert token.access_token
             assert token.refresh_token
 
@@ -119,7 +121,9 @@ def test_create_user_token_persists_refresh_token():
 def test_rotate_refresh_token_returns_none_when_missing():
     async def _scenario():
         async with SessionLocal() as db:
-            token = await rotate_refresh_token(db, f"missing-{uuid.uuid4().hex}")
+            token = await _auth_service_module().rotate_refresh_token(
+                db, f"missing-{uuid.uuid4().hex}"
+            )
             assert token is None
 
     _run(_scenario())
@@ -128,7 +132,9 @@ def test_rotate_refresh_token_returns_none_when_missing():
 def test_revoke_refresh_token_returns_false_for_missing_token():
     async def _scenario():
         async with SessionLocal() as db:
-            revoked = await revoke_refresh_token(db, f"missing-{uuid.uuid4().hex}")
+            revoked = await _auth_service_module().revoke_refresh_token(
+                db, f"missing-{uuid.uuid4().hex}"
+            )
             assert revoked is False
 
     _run(_scenario())
@@ -142,7 +148,7 @@ def test_revoke_all_refresh_tokens_marks_all_revoked():
 
     async def _scenario():
         async with SessionLocal() as db:
-            await revoke_all_refresh_tokens(db, created.id)
+            await _auth_service_module().revoke_all_refresh_tokens(db, created.id)
 
         records = await _list_user_tokens(created.id)
         assert len(records) >= 2
@@ -161,7 +167,7 @@ def test_rotate_refresh_token_revoked_record_revokes_all_and_returns_none():
 
     async def _scenario():
         async with SessionLocal() as db:
-            token = await rotate_refresh_token(db, revoked_token)
+            token = await _auth_service_module().rotate_refresh_token(db, revoked_token)
             assert token is None
 
         records = await _list_user_tokens(created.id)
@@ -179,7 +185,7 @@ def test_rotate_refresh_token_expired_record_returns_none():
 
     async def _scenario():
         async with SessionLocal() as db:
-            token = await rotate_refresh_token(db, expired_token)
+            token = await _auth_service_module().rotate_refresh_token(db, expired_token)
             assert token is None
 
     _run(_scenario())
@@ -193,7 +199,7 @@ def test_rotate_refresh_token_rotates_and_revokes_old_token():
 
     async def _scenario():
         async with SessionLocal() as db:
-            rotated = await rotate_refresh_token(db, old_token)
+            rotated = await _auth_service_module().rotate_refresh_token(db, old_token)
             assert rotated is not None
             assert rotated.refresh_token != old_token
             assert rotated.refresh_token is not None
@@ -204,5 +210,30 @@ def test_rotate_refresh_token_rotates_and_revokes_old_token():
         by_hash = {record.token_hash: record for record in records}
         assert by_hash[old_hash].revoked is True
         assert by_hash[new_hash].revoked is False
+
+    _run(_scenario())
+
+
+def test_rotate_refresh_token_is_atomic_under_concurrent_requests():
+    email = f"rotate-concurrent-{uuid.uuid4().hex}@example.com"
+    created = _run(_create_user(email, "StrongPass123!"))
+    shared_token = f"shared-{uuid.uuid4().hex}"
+    _run(_insert_refresh_token(created.id, shared_token, revoked=False))
+
+    async def _scenario():
+        auth_service_module = _auth_service_module()
+
+        async def _rotate_once():
+            async with SessionLocal() as db:
+                return await auth_service_module.rotate_refresh_token(db, shared_token)
+
+        results = await asyncio.gather(_rotate_once(), _rotate_once())
+
+        successful_rotations = [result for result in results if result is not None]
+        assert len(successful_rotations) == 1
+
+        records = await _list_user_tokens(created.id)
+        assert records
+        assert all(record.revoked for record in records)
 
     _run(_scenario())
