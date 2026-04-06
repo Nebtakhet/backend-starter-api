@@ -1,6 +1,6 @@
 # Authentication service functions for login and token lifecycle.
 
-from datetime import timedelta, timezone
+from datetime import timedelta
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,16 +60,30 @@ async def store_refresh_token(
 async def rotate_refresh_token(db: AsyncSession, raw_token: str) -> Token | None:
     token_hash = hash_refresh_token(raw_token)
     async with db.begin():
-        result = await db.execute(
-            select(RefreshToken).where(RefreshToken.token_hash == token_hash).with_for_update()
+        claim_result = await db.execute(
+            update(RefreshToken)
+            .where(
+                RefreshToken.token_hash == token_hash,
+                RefreshToken.revoked.is_(False),
+                RefreshToken.expires_at > utcnow(),
+            )
+            .values(revoked=True)
+            .returning(RefreshToken.user_id)
         )
-        record = result.scalars().first()
+        user_id = claim_result.scalar_one_or_none()
+        if user_id is not None:
+            access_token = create_access_token(subject=str(user_id))
+            new_refresh = create_refresh_token()
+            await store_refresh_token(db, user_id, new_refresh, commit=False)
+            return Token(access_token=access_token, refresh_token=new_refresh)
+
+        record_result = await db.execute(
+            select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+        )
+        record: RefreshToken | None = record_result.scalars().first()
         if not record:
             return None
 
-        expires_at = record.expires_at
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
         if record.revoked:
             # Defensive: a reused refresh token invalidates all sessions for the user.
             await db.execute(
@@ -78,14 +92,8 @@ async def rotate_refresh_token(db: AsyncSession, raw_token: str) -> Token | None
                 .values(revoked=True)
             )
             return None
-        if expires_at <= utcnow():
-            return None
 
-        record.revoked = True
-        access_token = create_access_token(subject=str(record.user_id))
-        new_refresh = create_refresh_token()
-        await store_refresh_token(db, record.user_id, new_refresh, commit=False)
-        return Token(access_token=access_token, refresh_token=new_refresh)
+        return None
 
 
 async def revoke_refresh_token(db: AsyncSession, raw_token: str) -> bool:
