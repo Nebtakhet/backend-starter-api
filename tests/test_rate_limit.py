@@ -5,6 +5,10 @@ import os
 import sys
 
 from fastapi.testclient import TestClient
+from starlette.requests import Request
+
+from app.core.rate_limit import get_rate_limit_key
+import app.core.rate_limit as rate_limit_module
 
 
 def _build_app(
@@ -137,3 +141,46 @@ def test_rate_limit_ignores_forwarded_for_when_proxy_is_untrusted():
         headers={"X-Forwarded-For": "203.0.113.11"},
     )
     assert second.status_code == 429
+
+
+def _request(client_host: str | None, forwarded_for: str | None = None) -> Request:
+    headers: list[tuple[bytes, bytes]] = []
+    if forwarded_for is not None:
+        headers.append((b"x-forwarded-for", forwarded_for.encode("utf-8")))
+    scope = {
+        "type": "http",
+        "http_version": "1.1",
+        "method": "GET",
+        "scheme": "http",
+        "path": "/",
+        "raw_path": b"/",
+        "query_string": b"",
+        "headers": headers,
+        "client": (client_host, 12345) if client_host is not None else None,
+        "server": ("testserver", 80),
+    }
+    return Request(scope)
+
+
+def test_rate_limit_key_uses_first_forwarded_ip_for_trusted_proxy(monkeypatch):
+    monkeypatch.setattr(rate_limit_module.settings, "RATE_LIMIT_TRUST_PROXY_HEADERS", True)
+    monkeypatch.setattr(rate_limit_module.settings, "RATE_LIMIT_TRUSTED_PROXY_IPS", ["10.0.0.1"])
+
+    request = _request("10.0.0.1", "203.0.113.10, 70.41.3.18")
+    assert get_rate_limit_key(request) == "203.0.113.10"
+
+
+def test_rate_limit_key_ignores_malformed_forwarded_ip(monkeypatch):
+    monkeypatch.setattr(rate_limit_module.settings, "RATE_LIMIT_TRUST_PROXY_HEADERS", True)
+    monkeypatch.setattr(rate_limit_module.settings, "RATE_LIMIT_TRUSTED_PROXY_IPS", ["10.0.0.1"])
+
+    request = _request("10.0.0.1", "not-an-ip")
+    assert get_rate_limit_key(request) == "10.0.0.1"
+
+
+def test_rate_limit_key_returns_unknown_when_client_missing(monkeypatch):
+    monkeypatch.setattr(rate_limit_module.settings, "RATE_LIMIT_TRUST_PROXY_HEADERS", True)
+    monkeypatch.setattr(rate_limit_module.settings, "RATE_LIMIT_TRUSTED_PROXY_IPS", ["10.0.0.1"])
+
+    request = _request(None, "203.0.113.10")
+    assert get_rate_limit_key(request) == "unknown"
