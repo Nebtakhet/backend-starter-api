@@ -1,5 +1,7 @@
 # Application configuration loaded from environment variables.
 
+from typing import Self
+
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -28,7 +30,7 @@ class Settings(BaseSettings):
     SQLALCHEMY_DATABASE_URI: str = Field(...)
 
     @model_validator(mode="after")
-    def _validate_security(self):
+    def _validate_security(self) -> Self:
         # Fail fast on insecure or invalid production settings.
         if self.SECRET_KEY.lower() == "change-me":
             raise ValueError("SECRET_KEY must be set to a strong value")
