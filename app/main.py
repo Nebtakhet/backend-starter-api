@@ -1,6 +1,9 @@
 # FastAPI application setup, middleware, and global error handling.
 
 from collections.abc import Sequence
+from collections.abc import AsyncIterator
+from collections.abc import Awaitable
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 import logging
 from time import perf_counter
@@ -30,7 +33,7 @@ logger = logging.getLogger("app.request")
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Ensure tables exist on startup for local/dev usage.
     if settings.AUTO_CREATE_SCHEMA:
         async with engine.begin() as conn:
@@ -55,7 +58,10 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def add_timing_header(request: Request, call_next):
+async def add_timing_header(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
     request_id = request.headers.get("X-Request-ID") or uuid4().hex
     token = set_request_id(request_id)
     start = perf_counter()
@@ -111,7 +117,9 @@ async def add_timing_header(request: Request, call_next):
     return response
 
 
-def error_payload(detail: str, code: str, errors: Sequence[object] | None = None) -> dict:
+def error_payload(
+    detail: str, code: str, errors: Sequence[object] | None = None
+) -> dict[str, object]:
     payload: dict[str, object] = {"detail": detail, "code": code}
     if errors is not None:
         payload["errors"] = errors
@@ -119,7 +127,9 @@ def error_payload(detail: str, code: str, errors: Sequence[object] | None = None
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
     errors = jsonable_encoder(exc.errors())
     return JSONResponse(
         status_code=422,
@@ -132,7 +142,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     code = "auth_error" if exc.status_code in (401, 403) else "http_error"
     return JSONResponse(
         status_code=exc.status_code,
@@ -141,7 +151,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 @app.exception_handler(IntegrityError)
-async def integrity_exception_handler(request: Request, exc: IntegrityError):
+async def integrity_exception_handler(request: Request, exc: IntegrityError) -> JSONResponse:
     return JSONResponse(
         status_code=409,
         content=error_payload(detail="Database integrity error", code="db_integrity_error"),
@@ -149,7 +159,7 @@ async def integrity_exception_handler(request: Request, exc: IntegrityError):
 
 
 @app.exception_handler(SQLAlchemyError)
-async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
     return JSONResponse(
         status_code=500,
         content=error_payload(detail="Database error", code="db_error"),
@@ -177,7 +187,7 @@ async def _database_connected() -> bool:
 
 
 @app.get("/health/live")
-async def health_live() -> dict:
+async def health_live() -> dict[str, str]:
     return {"status": "ok"}
 
 
@@ -193,7 +203,7 @@ async def health_ready() -> Response:
 
 
 @app.get("/health")
-async def health_check() -> dict:
+async def health_check() -> dict[str, str]:
     # Backward-compatible health endpoint.
     database_ok = await _database_connected()
     return {
