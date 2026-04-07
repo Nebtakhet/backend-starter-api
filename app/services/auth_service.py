@@ -18,7 +18,7 @@ from app.services.user_service import get_user_by_email
 from app.utils.time import utcnow
 
 
-async def authenticate_user(db: AsyncSession, email: str, password: str):
+async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
     user = await get_user_by_email(db, email)
     if not user:
         return None
