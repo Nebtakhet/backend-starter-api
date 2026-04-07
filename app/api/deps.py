@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.security import ALGORITHM
+from app.db.models import User
 from app.db.session import SessionLocal
 from app.schemas.auth import TokenPayload
 from app.services.user_service import get_user_by_id
@@ -36,7 +37,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login
 async def get_current_user(
     db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme),
-):
+) -> User:
     # Decode the JWT and load the current user or fail with 401.
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
