@@ -78,8 +78,8 @@ make ci
 - **CORS** support configurable via environment
 - **Timestamps** on core models (`created_at`, `updated_at`)
 - **async/await** endpoints for high concurrency
-- **Type-safe** codebase with mypy validation
-- Comprehensive **test suite** (57+ tests) with an enforced coverage gate
+- **Type-safe** codebase with mypy validation (strict on app modules)
+- Comprehensive **test suite** (68+ tests) with an enforced coverage gate
 - **Code coverage measurement** with detailed reports (HTML, terminal, missing lines)
 - **CI pipeline** with GitHub Actions (lint, format, typecheck, security audit, tests)
 - **Pre-commit hooks** for local quality enforcement
@@ -602,14 +602,18 @@ The following environment variables must be set in your `.env` file:
 **Optional:**
 - `REFRESH_TOKEN_EXPIRE_DAYS` - Refresh token lifetime (default: `30`)
 - `ENVIRONMENT` - Environment name (default: `development`)
+- `AUTO_CREATE_SCHEMA` - Auto-create DB tables on startup (default: `false`; keep `false` in production)
 - `CORS_ORIGINS` - JSON array of allowed origins (default: `http://localhost:3000`, `http://localhost:5173`)
 - `REDIS_URL` - Redis connection string for rate limiting (default: `redis://localhost:6379/0`)
+- `CACHE_TTL_SECONDS` - Cache TTL in seconds for cache-enabled paths (default: `30`)
 
 ### Security Notes
 
 - Never commit `.env` files to version control
 - Use strong, randomly generated keys for `SECRET_KEY` and `REFRESH_TOKEN_SECRET`
 - In production, use PostgreSQL instead of SQLite
+- In production, keep `AUTO_CREATE_SCHEMA=false` and run Alembic migrations explicitly
+- Enable `RATE_LIMIT_TRUST_PROXY_HEADERS` only with explicitly trusted peers in `RATE_LIMIT_TRUSTED_PROXY_IPS`
 - The app validates that secret keys are not set to default values in production
 
 ## 📄 License
