@@ -35,6 +35,22 @@ def test_get_current_user_raises_for_non_string_subject(monkeypatch):
     _run(_scenario())
 
 
+def test_get_current_user_raises_for_non_numeric_subject_string(monkeypatch):
+    monkeypatch.setattr(deps.jwt, "decode", lambda *args, **kwargs: {"sub": "abc"})
+
+    async def _fake_get_user_by_id(db, user_id):
+        raise AssertionError("get_user_by_id should not be called for invalid subject")
+
+    monkeypatch.setattr(deps, "get_user_by_id", _fake_get_user_by_id)
+
+    async def _scenario() -> None:
+        with pytest.raises(HTTPException) as exc:
+            await deps.get_current_user(db=_fake_db(), token="irrelevant")
+        assert exc.value.status_code == status.HTTP_401_UNAUTHORIZED
+
+    _run(_scenario())
+
+
 def test_get_current_user_raises_when_user_missing(monkeypatch):
     monkeypatch.setattr(deps.jwt, "decode", lambda *args, **kwargs: {"sub": "123"})
 
