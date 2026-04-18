@@ -32,9 +32,9 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _validate_security(self) -> Self:
         # Fail fast on insecure or invalid production settings.
-        if self.SECRET_KEY.lower() == "change-me":
+        if self.SECRET_KEY.strip().lower().startswith("change-me"):
             raise ValueError("SECRET_KEY must be set to a strong value")
-        if self.REFRESH_TOKEN_SECRET.lower() == "change-me":
+        if self.REFRESH_TOKEN_SECRET.strip().lower().startswith("change-me"):
             raise ValueError("REFRESH_TOKEN_SECRET must be set to a strong value")
         if self.ENVIRONMENT.lower() == "production":
             if self.AUTO_CREATE_SCHEMA:
