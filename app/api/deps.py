@@ -63,7 +63,11 @@ async def get_current_user(
         token_data = TokenPayload(sub=subject)
     except JWTError:
         raise credentials_exception
-    user = await get_user_by_id(db, int(token_data.sub))
+    try:
+        user_id = int(token_data.sub)
+    except (TypeError, ValueError):
+        raise credentials_exception
+    user = await get_user_by_id(db, user_id)
     if user is None:
         raise credentials_exception
     return user
