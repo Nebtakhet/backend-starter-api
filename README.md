@@ -79,7 +79,7 @@ make ci
 - **Timestamps** on core models (`created_at`, `updated_at`)
 - **async/await** endpoints for high concurrency
 - **Type-safe** codebase with mypy validation (strict on app modules)
-- Comprehensive **test suite** (68+ tests) with an enforced coverage gate
+- Comprehensive **test suite** (77+ tests) with an enforced coverage gate
 - **Code coverage measurement** with detailed reports (HTML, terminal, missing lines)
 - **CI pipeline** with GitHub Actions (lint, format, typecheck, security audit, tests)
 - **Pre-commit hooks** for local quality enforcement
@@ -407,6 +407,10 @@ mypy app tests
 ```bash
 pip-audit             # Scan for known CVEs in dependencies
 ```
+
+Note:
+- If installed in editable mode (`pip install -e ".[dev]"`), `pip-audit` may report the local package as skipped because it is not published on PyPI.
+- This skip is expected and does not indicate a vulnerability in third-party dependencies.
 
 **Pre-commit (run all checks manually):**
 ```bash
