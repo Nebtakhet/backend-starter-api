@@ -8,6 +8,7 @@ from app.schemas.user import validate_password_policy
 @pytest.mark.parametrize(
     "password,error_message",
     [
+        ("Aa1!short", "at least 12 characters"),
         ("alllowercase123!", "uppercase"),
         ("ALLUPPERCASE123!", "lowercase"),
         ("NoNumbersHere!", "number"),
