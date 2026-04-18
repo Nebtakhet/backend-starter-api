@@ -1,10 +1,20 @@
 # Tests for middleware behavior.
 
+from fastapi import APIRouter
+from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 client = TestClient(app)
+
+
+def ensure_get_route(path: str, handler) -> None:
+    if any(isinstance(route, APIRoute) and route.path == path for route in app.router.routes):
+        return
+    router = APIRouter()
+    router.add_api_route(path, handler, methods=["GET"])
+    app.include_router(router)
 
 
 def test_cors_preflight_allows_origin():
@@ -56,3 +66,15 @@ def test_metrics_payload_contains_http_metrics():
     assert "http_requests_total" in payload
     assert "http_request_duration_seconds" in payload
     assert "http_requests_in_progress" in payload
+
+
+def test_middleware_exception_path_returns_500_response():
+    path = "/_test/middleware-error"
+
+    def raise_runtime_error():
+        raise RuntimeError("middleware failure path")
+
+    ensure_get_route(path, raise_runtime_error)
+    unsafe_client = TestClient(app, raise_server_exceptions=False)
+    response = unsafe_client.get(path)
+    assert response.status_code == 500
