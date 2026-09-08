@@ -80,6 +80,7 @@ make ci
 - **async/await** endpoints for high concurrency
 - **Type-safe** codebase with mypy validation (strict on app modules)
 - Comprehensive **test suite** (77+ tests) with an enforced coverage gate
+- **Robot Framework** acceptance tests for live API workflows
 - **Code coverage measurement** with detailed reports (HTML, terminal, missing lines)
 - **CI pipeline** with GitHub Actions (lint, format, typecheck, security audit, tests)
 - **Pre-commit hooks** for local quality enforcement
@@ -119,7 +120,8 @@ backend-starter-api/
 │   ├── schemas/             # Pydantic request/response schemas
 │   ├── services/            # Business logic (auth_service, user_service)
 │   └── utils/               # Utility helpers
-└── tests/                   # Integration and unit tests
+├── tests/                   # Integration and unit tests
+└── acceptance/              # Robot Framework API acceptance tests
 ```
 
 ## 📋 Prerequisites
@@ -377,6 +379,20 @@ Open HTML report:
 open htmlcov/index.html      # macOS
 xdg-open htmlcov/index.html  # Linux
 start htmlcov/index.html     # Windows
+
+### Robot Framework acceptance tests
+
+Robot tests exercise the API over HTTP, so the application must be running first.
+
+```bash
+COMPOSE_ENV_FILE=.env.example docker compose up -d --wait db redis
+COMPOSE_ENV_FILE=.env.example docker compose run --rm api alembic upgrade head
+COMPOSE_ENV_FILE=.env.example docker compose up -d --wait api
+make acceptance
+COMPOSE_ENV_FILE=.env.example docker compose down
+```
+
+Reports are written to `robot-results/` as `report.html`, `log.html`, and `output.xml`.
 ```
 
 ## ✅ Quality Checks

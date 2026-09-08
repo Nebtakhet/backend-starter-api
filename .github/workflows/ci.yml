@@ -50,3 +50,29 @@ jobs:
 
       - name: Tests + Coverage gate
         run: pytest tests/ --cov=app --cov-report=term-missing --cov-fail-under=90
+
+      - name: Start acceptance dependencies
+        env:
+          COMPOSE_ENV_FILE: .env.example
+        run: docker compose up -d --wait db redis
+
+      - name: Apply acceptance database migrations
+        env:
+          COMPOSE_ENV_FILE: .env.example
+        run: docker compose run --rm api alembic upgrade head
+
+      - name: Start acceptance API
+        env:
+          COMPOSE_ENV_FILE: .env.example
+        run: docker compose up -d --wait api
+
+      - name: Robot Framework acceptance tests
+        env:
+          COMPOSE_ENV_FILE: .env.example
+        run: make acceptance
+
+      - name: Stop acceptance stack
+        if: always()
+        env:
+          COMPOSE_ENV_FILE: .env.example
+        run: docker compose down -v

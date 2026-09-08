@@ -2,7 +2,7 @@ services:
   api:
     build: .
     env_file:
-      - .env
+      - ${COMPOSE_ENV_FILE:-.env}
     environment:
       REDIS_URL: redis://redis:6379/0
       SQLALCHEMY_DATABASE_URI: postgresql://postgres:postgres@db:5432/app
