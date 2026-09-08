@@ -18,8 +18,8 @@ if not use_external_services:
     os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite:///./test.db"
     os.environ["REDIS_URL"] = "memory://"
 
-from app.db.base import Base  # noqa: E402
-from app.db.session import engine  # noqa: E402
+from app.db.base import Base
+from app.db.session import engine
 
 
 def _run(coro):
