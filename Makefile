@@ -3,6 +3,7 @@ SHELL := /bin/sh
 PYTHON ?= .venv/bin/python
 PIP := $(PYTHON) -m pip
 PYTEST := $(PYTHON) -m pytest
+ROBOT := $(PYTHON) -m robot
 UVICORN := $(PYTHON) -m uvicorn
 RUFF := $(PYTHON) -m ruff
 MYPY := $(PYTHON) -m mypy
@@ -12,6 +13,7 @@ PIP_AUDIT := $(PYTHON) -m pip_audit
 COMPOSE ?= docker compose
 
 COV_FAIL_UNDER ?= 90
+BASE_URL ?= http://localhost:8000
 MSG ?=
 
 .DEFAULT_GOAL := help
@@ -23,6 +25,7 @@ help:
 	@echo "  make run            - Run API locally with reload"
 	@echo "  make test           - Run test suite"
 	@echo "  make test-cov       - Run tests with coverage gate"
+	@echo "  make acceptance     - Run Robot Framework acceptance tests"
 	@echo "  make lint           - Ruff lint"
 	@echo "  make format         - Ruff format"
 	@echo "  make format-check   - Ruff format check"
@@ -53,6 +56,9 @@ test:
 
 test-cov:
 	$(PYTEST) tests/ --cov=app --cov-report=term-missing --cov-fail-under=$(COV_FAIL_UNDER)
+
+acceptance:
+	$(ROBOT) -d robot-results -v BASE_URL:$(BASE_URL) acceptance/
 
 lint:
 	$(RUFF) check .
@@ -109,4 +115,4 @@ clean:
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +
 	find . -type f -name '*.pyc' -delete
 
-.PHONY: help venv install run test test-cov lint format format-check typecheck security quality migrate migrate-check migrate-new ci up down logs clean
+.PHONY: help venv install run test test-cov acceptance lint format format-check typecheck security quality migrate migrate-check migrate-new ci up down logs clean
