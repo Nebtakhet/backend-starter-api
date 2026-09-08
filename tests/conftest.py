@@ -1,7 +1,7 @@
 # Pytest fixtures and test configuration.
 
-import os
 import asyncio
+import os
 
 import pytest
 

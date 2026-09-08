@@ -5,7 +5,6 @@ import logging
 from contextvars import ContextVar, Token
 from datetime import UTC, datetime
 
-
 _request_id_context: ContextVar[str] = ContextVar("request_id", default="-")
 
 

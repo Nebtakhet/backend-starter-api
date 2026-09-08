@@ -1,13 +1,13 @@
 # Unit tests for auth service branch behavior.
 
 import asyncio
-from datetime import timedelta
 import uuid
+from datetime import timedelta
 
 from sqlalchemy import select
 
-from app.core.security import get_password_hash, hash_refresh_token
 import app.db.base  # noqa: F401
+from app.core.security import get_password_hash, hash_refresh_token
 from app.db.models import RefreshToken, User
 from app.db.session import SessionLocal
 from app.utils.time import utcnow

@@ -1,9 +1,9 @@
 # Security helpers for passwords and JWT/refresh tokens.
 
-from datetime import datetime, timedelta, timezone
-import hmac
 import hashlib
+import hmac
 import secrets
+from datetime import UTC, datetime, timedelta
 
 from jose import jwt
 from passlib.context import CryptContext
@@ -24,10 +24,10 @@ def get_password_hash(password: str) -> str:
 
 
 def create_access_token(subject: str, expires_delta_minutes: int | None = None) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(
+    expire = datetime.now(UTC) + timedelta(
         minutes=expires_delta_minutes or settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     to_encode = {
         "sub": subject,
         "exp": expire,

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
 from app.core.config import settings
+from app.core.rate_limit import limiter
 from app.schemas.auth import LoginRequest, RefreshRequest, Token
 from app.services.auth_service import (
     authenticate_user,
@@ -12,8 +13,6 @@ from app.services.auth_service import (
     revoke_refresh_token,
     rotate_refresh_token,
 )
-
-from app.core.rate_limit import limiter
 
 router = APIRouter()
 

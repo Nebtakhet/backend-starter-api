@@ -1,16 +1,13 @@
 # FastAPI application setup, middleware, and global error handling.
 
-from collections.abc import Sequence
-from collections.abc import AsyncIterator
-from collections.abc import Awaitable
-from collections.abc import Callable
-from contextlib import asynccontextmanager
 import logging
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
+from contextlib import asynccontextmanager
 from time import perf_counter
 from uuid import uuid4
 
-from fastapi.encoders import jsonable_encoder
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -182,7 +179,7 @@ async def _database_connected() -> bool:
         async with SessionLocal() as db:
             await db.execute(text("SELECT 1"))
         return True
-    except Exception:
+    except SQLAlchemyError:
         return False
 
 

@@ -7,8 +7,8 @@ import sys
 from fastapi.testclient import TestClient
 from starlette.requests import Request
 
-from app.core.rate_limit import get_rate_limit_key
 import app.core.rate_limit as rate_limit_module
+from app.core.rate_limit import get_rate_limit_key
 
 
 def _build_app(
@@ -34,7 +34,7 @@ def _build_app(
         if name == "app" or name.startswith("app."):
             del sys.modules[name]
 
-    import app.main as main
+    from app import main
 
     importlib.reload(main)
     return main.app
