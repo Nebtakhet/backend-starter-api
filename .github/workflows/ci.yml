@@ -82,7 +82,7 @@ jobs:
           COMPOSE_ENV_FILE: .env.example
           AUTH_LOGIN_RATE_LIMIT: 1000/minute
           AUTH_REFRESH_RATE_LIMIT: 1000/minute
-        run: make acceptance
+        run: make PYTHON=python acceptance
 
       - name: Stop acceptance stack
         if: always()
