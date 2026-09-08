@@ -96,4 +96,3 @@ async def delete_item(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
     await db.delete(item)
     await db.commit()
-    return None

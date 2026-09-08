@@ -386,9 +386,9 @@ Robot tests exercise the API over HTTP, so the application must be running first
 
 ```bash
 COMPOSE_ENV_FILE=.env.example docker compose up -d --wait db redis
-COMPOSE_ENV_FILE=.env.example docker compose run --rm api alembic upgrade head
-COMPOSE_ENV_FILE=.env.example docker compose up -d --wait api
-make acceptance
+AUTH_LOGIN_RATE_LIMIT=1000/minute AUTH_REFRESH_RATE_LIMIT=1000/minute COMPOSE_ENV_FILE=.env.example docker compose run --rm api alembic upgrade head
+AUTH_LOGIN_RATE_LIMIT=1000/minute AUTH_REFRESH_RATE_LIMIT=1000/minute COMPOSE_ENV_FILE=.env.example docker compose up -d --wait api
+AUTH_LOGIN_RATE_LIMIT=1000/minute AUTH_REFRESH_RATE_LIMIT=1000/minute make acceptance
 COMPOSE_ENV_FILE=.env.example docker compose down
 ```
 

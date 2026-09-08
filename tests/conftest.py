@@ -7,16 +7,19 @@ import pytest
 
 # Override config for test runs.
 
-os.environ.setdefault("ENVIRONMENT", "testing")
-os.environ.setdefault("SECRET_KEY", "test-secret-key-32-chars-min-000000")
-os.environ.setdefault("REFRESH_TOKEN_SECRET", "test-refresh-secret-32-chars-0000")
-os.environ.setdefault("SQLALCHEMY_DATABASE_URI", "sqlite:///./test.db")
-os.environ.setdefault("AUTH_LOGIN_RATE_LIMIT", "1000/minute")
-os.environ.setdefault("AUTH_REFRESH_RATE_LIMIT", "1000/minute")
-os.environ.setdefault("REDIS_URL", "memory://")
+use_external_services = os.getenv("TEST_USE_EXTERNAL_SERVICES", "false").lower() == "true"
+os.environ["ENVIRONMENT"] = "testing"
+os.environ["SECRET_KEY"] = "test-secret-key-32-chars-min-000000"
+os.environ["REFRESH_TOKEN_SECRET"] = "test-refresh-secret-32-chars-0000"
+os.environ["AUTH_LOGIN_RATE_LIMIT"] = "1000/minute"
+os.environ["AUTH_REFRESH_RATE_LIMIT"] = "1000/minute"
 
-from app.db.base import Base
-from app.db.session import engine
+if not use_external_services:
+    os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite:///./test.db"
+    os.environ["REDIS_URL"] = "memory://"
+
+from app.db.base import Base  # noqa: E402
+from app.db.session import engine  # noqa: E402
 
 
 def _run(coro):

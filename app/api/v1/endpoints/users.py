@@ -61,4 +61,3 @@ async def change_password(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Current password is incorrect",
         )
-    return None

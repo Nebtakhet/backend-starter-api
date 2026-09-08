@@ -66,16 +66,22 @@ jobs:
       - name: Apply acceptance database migrations
         env:
           COMPOSE_ENV_FILE: .env.example
+          AUTH_LOGIN_RATE_LIMIT: 1000/minute
+          AUTH_REFRESH_RATE_LIMIT: 1000/minute
         run: docker compose run --rm api alembic upgrade head
 
       - name: Start acceptance API
         env:
           COMPOSE_ENV_FILE: .env.example
+          AUTH_LOGIN_RATE_LIMIT: 1000/minute
+          AUTH_REFRESH_RATE_LIMIT: 1000/minute
         run: docker compose up -d --wait api
 
       - name: Robot Framework acceptance tests
         env:
           COMPOSE_ENV_FILE: .env.example
+          AUTH_LOGIN_RATE_LIMIT: 1000/minute
+          AUTH_REFRESH_RATE_LIMIT: 1000/minute
         run: make acceptance
 
       - name: Stop acceptance stack
@@ -125,6 +131,7 @@ jobs:
           SECRET_KEY: test-secret-key-32-chars-min-000000
           REFRESH_TOKEN_SECRET: test-refresh-secret-32-chars-0000
           ENVIRONMENT: testing
+          TEST_USE_EXTERNAL_SERVICES: "true"
           SQLALCHEMY_DATABASE_URI: postgresql://postgres:postgres@localhost:5432/app
           REDIS_URL: redis://localhost:6379/0
           AUTH_LOGIN_RATE_LIMIT: 1000/minute
