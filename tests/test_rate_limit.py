@@ -19,6 +19,7 @@ def _build_app(
     trusted_proxy_hosts: str,
 ):
     # Build a fresh app instance with custom rate limit settings.
+    os.environ["ENVIRONMENT"] = "testing"
     os.environ["SECRET_KEY"] = "test-secret-key-32-chars-min-000000"
     os.environ["REFRESH_TOKEN_SECRET"] = "test-refresh-secret-32-chars-0000"
     os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite:///./test.db"

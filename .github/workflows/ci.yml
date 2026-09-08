@@ -76,3 +76,58 @@ jobs:
         env:
           COMPOSE_ENV_FILE: .env.example
         run: docker compose down -v
+
+  postgres-redis-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Tests against PostgreSQL and Redis
+        env:
+          SECRET_KEY: test-secret-key-32-chars-min-000000
+          REFRESH_TOKEN_SECRET: test-refresh-secret-32-chars-0000
+          SQLALCHEMY_DATABASE_URI: postgresql://postgres:postgres@localhost:5432/app
+          REDIS_URL: redis://localhost:6379/0
+          AUTH_LOGIN_RATE_LIMIT: 1000/minute
+          AUTH_REFRESH_RATE_LIMIT: 1000/minute
+        run: pytest tests/ --ignore=tests/test_rate_limit.py --cov=app --cov-report=term-missing
+
+      - name: Rate limit tests against in-memory storage
+        env:
+          SECRET_KEY: test-secret-key-32-chars-min-000000
+          REFRESH_TOKEN_SECRET: test-refresh-secret-32-chars-0000
+          ENVIRONMENT: testing
+          SQLALCHEMY_DATABASE_URI: sqlite:///./test.db
+          REDIS_URL: memory://
+        run: pytest tests/test_rate_limit.py
