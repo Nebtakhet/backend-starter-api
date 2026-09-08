@@ -16,8 +16,8 @@ router = APIRouter()
 @router.post("/", response_model=ItemOut, status_code=status.HTTP_201_CREATED)
 async def create_item(
     data: ItemCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Item:
     item = Item(
         title=data.title,
@@ -32,10 +32,10 @@ async def create_item(
 
 @router.get("/", response_model=ItemListResponse)
 async def read_items(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
     skip: Annotated[int, Query(ge=0, description="Number of items to skip")] = 0,
     limit: Annotated[int, Query(ge=1, le=100, description="Max items to return")] = 50,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ) -> ItemListResponse:
     # List items for the current user with pagination.
     total_result = await db.execute(
@@ -54,8 +54,8 @@ async def read_items(
 @router.get("/{item_id}", response_model=ItemOut)
 async def read_item(
     item_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Item:
     result = await db.execute(select(Item).where(Item.id == item_id))
     item = result.scalars().first()
@@ -68,8 +68,8 @@ async def read_item(
 async def update_item(
     item_id: int,
     data: ItemUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Item:
     result = await db.execute(select(Item).where(Item.id == item_id))
     item = result.scalars().first()
@@ -87,8 +87,8 @@ async def update_item(
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_item(
     item_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> None:
     result = await db.execute(select(Item).where(Item.id == item_id))
     item = result.scalars().first()

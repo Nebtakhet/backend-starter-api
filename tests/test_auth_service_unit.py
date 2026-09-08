@@ -6,7 +6,6 @@ from datetime import timedelta
 
 from sqlalchemy import select
 
-import app.db.base  # noqa: F401
 from app.core.security import get_password_hash, hash_refresh_token
 from app.db.models import RefreshToken, User
 from app.db.session import SessionLocal

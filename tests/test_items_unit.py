@@ -53,7 +53,7 @@ def test_items_endpoint_functions_cover_success_and_not_found_paths():
             )
             assert created.id is not None
 
-            page = await items_endpoint.read_items(0, 10, db, owner_user)
+            page = await items_endpoint.read_items(db, owner_user, 0, 10)
             assert page.total >= 1
             assert any(item.id == created.id for item in page.items)
 

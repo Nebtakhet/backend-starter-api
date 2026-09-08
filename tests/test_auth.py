@@ -3,11 +3,13 @@
 import asyncio
 import uuid
 from datetime import timedelta
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
 from app.core.security import get_password_hash, hash_refresh_token
@@ -296,7 +298,10 @@ def test_db_rollback_on_exception():
         router = APIRouter()
 
         @router.post(route_path)
-        async def force_rollback(payload: dict, db=Depends(get_db)):
+        async def force_rollback(
+            payload: dict,
+            db: Annotated[AsyncSession, Depends(get_db)],
+        ):
             user = User(
                 email=payload["email"],
                 hashed_password=get_password_hash("password123"),
